@@ -2,11 +2,14 @@
 export default {
     content: [
       "./index.html",
-      "./src/**/*.{js,ts,jsx,tsx}",
+      "./src/**/*.{js,jsx,ts,tsx}",
     ],
     theme: {
       extend: {},
     },
-    plugins: [],
+    plugins: [
+      // @ts-ignore
+      import('@tailwindcss/typography'),
+    ],
   };
   
