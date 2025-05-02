@@ -48,7 +48,7 @@ export const useConversation = () => {
         chapter: chapterName,
         url: `${API_BASE_URL}/conversation/${newDocumentId}/start`,
         requestBody: {
-          topic: chapterName.toLowerCase()
+          topic: chapterName
         }
       })
 
@@ -58,7 +58,7 @@ export const useConversation = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          topic: chapterName.toLowerCase()
+          topic: chapterName
         }),
       })
 
