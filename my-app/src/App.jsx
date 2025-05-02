@@ -90,17 +90,13 @@ export default function App() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [dragActive, setDragActive] = useState(false)
   const [fileError, setFileError] = useState('')
-  const [pdfUrl, setPdfUrl] = useState(null)
-  const [isCopyingText, setIsCopyingText] = useState(false)
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
 
   const {
-    messages,
+    currentMessages,
     isLoading,
     isStartingConversation,
     startNewConversation,
-    sendMessage,
-    setMessages
+    sendMessage
   } = useConversation()
 
   const messagesEndRef = useRef(null)
@@ -108,14 +104,11 @@ export default function App() {
   const fileInputRef = useRef(null)
 
   const handleChapterClick = (chapterName) => {
-    // Clear messages immediately when switching topics
-    setMessages([])
-    
     setActiveChapter(chapterName)
     setActiveSection(documentStructure[chapterName].sections[0].title)
     setActiveSubsection(documentStructure[chapterName].sections[0].subsections[0])
     
-    // Start a new conversation when explicitly clicking on a chapter
+    // Start a new conversation or load existing one
     startNewConversation(chapterName)
   }
 
@@ -194,7 +187,7 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar
           activeChapter={activeChapter}
           activeSection={activeSection}
@@ -203,8 +196,8 @@ export default function App() {
           onSectionClick={handleSectionClick}
         />
 
-        <main className="w-[600px] flex flex-col bg-white border-r">
-          <div className="border-b px-8 py-4">
+        <main className="w-[600px] flex flex-col bg-white border-r overflow-hidden">
+          <div className="border-b px-8 py-4 flex-shrink-0">
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-semibold">{activeChapter}</h1>
               <span className="text-gray-400">→</span>
@@ -218,38 +211,34 @@ export default function App() {
             </div>
           </div>
 
-          <ChatMessages
-            messages={messages}
-            isLoading={isLoading}
-            isStartingConversation={isStartingConversation}
-            messagesEndRef={messagesEndRef}
-          />
+          <div className="flex-1 min-h-0 flex flex-col">
+            <ChatMessages
+              messages={currentMessages(activeChapter)}
+              isLoading={isLoading}
+              isStartingConversation={isStartingConversation}
+              messagesEndRef={messagesEndRef}
+            />
 
-          <ChatInput
-            inputMessage={inputMessage}
-            onInputChange={(e) => setInputMessage(e.target.value)}
-            onSubmit={handleSendMessage}
-            isLoading={isLoading}
-            selectedFile={selectedFile}
-            onFileSelect={handleFileSelect}
-            onFileRemove={() => setSelectedFile(null)}
-            fileError={fileError}
-            dragActive={dragActive}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDrop={handleDrop}
-            fileInputRef={fileInputRef}
-            inputRef={inputRef}
-          />
+            <ChatInput
+              inputMessage={inputMessage}
+              onInputChange={(e) => setInputMessage(e.target.value)}
+              onSubmit={handleSendMessage}
+              isLoading={isLoading}
+              selectedFile={selectedFile}
+              onFileSelect={handleFileSelect}
+              onFileRemove={() => setSelectedFile(null)}
+              fileError={fileError}
+              dragActive={dragActive}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDrop={handleDrop}
+              fileInputRef={fileInputRef}
+              inputRef={inputRef}
+            />
+          </div>
         </main>
 
-        <PdfPreview
-          pdfUrl={pdfUrl}
-          onCopyText={handleCopyText}
-          onDownloadPdf={handleDownloadPDF}
-          isCopyingText={isCopyingText}
-          isGeneratingPdf={isGeneratingPdf}
-        />
+        <PdfPreview />
       </div>
     </div>
   )

@@ -1,14 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { API_BASE_URL } from '../constants/documentStructure'
 
+const STORAGE_KEYS = {
+  DOCUMENT_IDS: 'documentIds',
+  MESSAGES: 'conversationMessages'
+}
+
 export const useConversation = () => {
-  const [messages, setMessages] = useState([])
+  // Initialize state from localStorage or default values
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = localStorage.getItem(STORAGE_KEYS.MESSAGES)
+    return savedMessages ? JSON.parse(savedMessages) : {}
+  })
   const [isLoading, setIsLoading] = useState(false)
   const [isStartingConversation, setIsStartingConversation] = useState(false)
-  const [documentIds, setDocumentIds] = useState({})
+  const [documentIds, setDocumentIds] = useState(() => {
+    const savedIds = localStorage.getItem(STORAGE_KEYS.DOCUMENT_IDS)
+    return savedIds ? JSON.parse(savedIds) : {}
+  })
+
+  // Persist state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.DOCUMENT_IDS, JSON.stringify(documentIds))
+  }, [documentIds])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages))
+  }, [messages])
 
   const startNewConversation = async (chapterName) => {
+    // If we already have a document ID for this chapter, load existing messages
+    if (documentIds[chapterName]) {
+      setMessages(prev => ({
+        ...prev,
+        [chapterName]: messages[chapterName] || []
+      }))
+      return
+    }
+
     const newDocumentId = uuidv4()
     setIsStartingConversation(true)
     
@@ -51,21 +81,31 @@ export const useConversation = () => {
         chapter: chapterName
       })
 
+      // Save the new document ID
       setDocumentIds(prev => ({
         ...prev,
         [chapterName]: newDocumentId
       }))
       
-      setMessages([{
+      // Initialize messages for this chapter
+      const initialMessage = [{
         role: 'assistant',
         content: data.message
-      }])
+      }]
+      
+      setMessages(prev => ({
+        ...prev,
+        [chapterName]: initialMessage
+      }))
     } catch (error) {
       console.error('Failed to start conversation:', error)
-      setMessages([{
-        role: 'assistant',
-        content: 'Es gab ein Problem beim Starten der Konversation. Bitte versuchen Sie es erneut.'
-      }])
+      setMessages(prev => ({
+        ...prev,
+        [chapterName]: [{
+          role: 'assistant',
+          content: 'Es gab ein Problem beim Starten der Konversation. Bitte versuchen Sie es erneut.'
+        }]
+      }))
     } finally {
       setIsStartingConversation(false)
     }
@@ -75,7 +115,13 @@ export const useConversation = () => {
     if (!message.trim() || !documentIds[activeChapter]) return
 
     const userMessage = { role: 'user', content: message }
-    setMessages(prev => [...prev, userMessage])
+    
+    // Add user message to the conversation
+    setMessages(prev => ({
+      ...prev,
+      [activeChapter]: [...(prev[activeChapter] || []), userMessage]
+    }))
+    
     setIsLoading(true)
 
     try {
@@ -100,23 +146,36 @@ export const useConversation = () => {
       }
 
       const data = await response.json()
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: data.message
-      }])
+      
+      // Add assistant response to the conversation
+      setMessages(prev => ({
+        ...prev,
+        [activeChapter]: [...(prev[activeChapter] || []), {
+          role: 'assistant',
+          content: data.message
+        }]
+      }))
     } catch (error) {
       console.error('Failed to send message:', error)
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Es gab ein Problem beim Senden der Nachricht. Bitte versuchen Sie es erneut.'
-      }])
+      setMessages(prev => ({
+        ...prev,
+        [activeChapter]: [...(prev[activeChapter] || []), {
+          role: 'assistant',
+          content: 'Es gab ein Problem beim Senden der Nachricht. Bitte versuchen Sie es erneut.'
+        }]
+      }))
     } finally {
       setIsLoading(false)
     }
   }
 
+  const getMessagesForChapter = (chapterName) => {
+    return messages[chapterName] || []
+  }
+
   return {
-    messages,
+    messages: messages,
+    currentMessages: (activeChapter) => getMessagesForChapter(activeChapter),
     isLoading,
     isStartingConversation,
     documentIds,
