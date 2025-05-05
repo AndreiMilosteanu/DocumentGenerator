@@ -15,6 +15,8 @@ export const useConversation = () => {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [isStartingConversation, setIsStartingConversation] = useState(false)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const [pdfUrls, setPdfUrls] = useState({})
   const [documentIds, setDocumentIds] = useState(() => {
     const savedIds = localStorage.getItem(STORAGE_KEYS.DOCUMENT_IDS)
     return savedIds ? JSON.parse(savedIds) : {}
@@ -29,6 +31,49 @@ export const useConversation = () => {
     localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages))
   }, [messages])
 
+  const fetchPdfPreview = async (documentId, chapter) => {
+    setIsGeneratingPdf(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/pdf`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`)
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      setPdfUrls(prev => ({
+        ...prev,
+        [chapter]: url
+      }))
+    } catch (error) {
+      console.error('Failed to fetch PDF:', error)
+    } finally {
+      setIsGeneratingPdf(false)
+    }
+  }
+
+  const downloadPdf = async (chapter) => {
+    const documentId = documentIds[chapter]
+    if (!documentId) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`)
+      if (!response.ok) {
+        throw new Error(`Failed to download PDF: ${response.status} ${response.statusText}`)
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${chapter}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to download PDF:', error)
+    }
+  }
+
   const startNewConversation = async (chapterName) => {
     // If we already have a document ID for this chapter, load existing messages
     if (documentIds[chapterName]) {
@@ -36,6 +81,10 @@ export const useConversation = () => {
         ...prev,
         [chapterName]: messages[chapterName] || []
       }))
+      // Fetch existing PDF if available
+      if (documentIds[chapterName]) {
+        await fetchPdfPreview(documentIds[chapterName], chapterName)
+      }
       return
     }
 
@@ -97,6 +146,9 @@ export const useConversation = () => {
         ...prev,
         [chapterName]: initialMessage
       }))
+
+      // Only fetch PDF after successful conversation start
+      await fetchPdfPreview(newDocumentId, chapterName)
     } catch (error) {
       console.error('Failed to start conversation:', error)
       setMessages(prev => ({
@@ -115,6 +167,7 @@ export const useConversation = () => {
     if (!message.trim() || !documentIds[activeChapter]) return
 
     const userMessage = { role: 'user', content: message }
+    const documentId = documentIds[activeChapter]
     
     // Add user message to the conversation
     setMessages(prev => ({
@@ -125,7 +178,7 @@ export const useConversation = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/conversation/${documentIds[activeChapter]}/reply`, {
+      const response = await fetch(`${API_BASE_URL}/conversation/${documentId}/reply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,6 +208,9 @@ export const useConversation = () => {
           content: data.message
         }]
       }))
+
+      // Only fetch PDF after successful reply
+      await fetchPdfPreview(documentId, activeChapter)
     } catch (error) {
       console.error('Failed to send message:', error)
       setMessages(prev => ({
@@ -178,9 +234,12 @@ export const useConversation = () => {
     currentMessages: (activeChapter) => getMessagesForChapter(activeChapter),
     isLoading,
     isStartingConversation,
+    isGeneratingPdf,
     documentIds,
+    pdfUrls,
     startNewConversation,
     sendMessage,
-    setMessages
+    setMessages,
+    downloadPdf
   }
 } 

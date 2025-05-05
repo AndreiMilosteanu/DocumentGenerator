@@ -95,8 +95,11 @@ export default function App() {
     currentMessages,
     isLoading,
     isStartingConversation,
+    isGeneratingPdf,
+    pdfUrls,
     startNewConversation,
-    sendMessage
+    sendMessage,
+    downloadPdf
   } = useConversation()
 
   const messagesEndRef = useRef(null)
@@ -175,14 +178,8 @@ export default function App() {
     if (file) handleFile(file)
   }
 
-  const handleCopyText = async () => {
-    // To be implemented later
-    console.log('Copy text functionality will be implemented later')
-  }
-
   const handleDownloadPDF = async () => {
-    // To be implemented later
-    console.log('PDF download functionality will be implemented later')
+    await downloadPdf(activeChapter)
   }
 
   return (
@@ -238,7 +235,11 @@ export default function App() {
           </div>
         </main>
 
-        <PdfPreview />
+        <PdfPreview
+          pdfUrl={pdfUrls[activeChapter]}
+          onDownloadPdf={handleDownloadPDF}
+          isGeneratingPdf={isGeneratingPdf}
+        />
       </div>
     </div>
   )
