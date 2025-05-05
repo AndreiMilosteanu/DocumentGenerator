@@ -7,8 +7,34 @@ export const Sidebar = ({
   activeSection, 
   activeSubsection, 
   onChapterClick, 
-  onSectionClick 
+  onSectionClick,
+  isPdfLoaded
 }) => {
+  const [lastClickedSubsection, setLastClickedSubsection] = React.useState(null)
+  const [showNotFoundError, setShowNotFoundError] = React.useState(false)
+
+  const handleSubsectionClick = (sectionTitle, subsection) => {
+    if (!isPdfLoaded) return // Do nothing if PDF is not loaded
+
+    // Set this subsection as the last clicked one
+    setLastClickedSubsection(subsection)
+    
+    // Clear any previous error message
+    setShowNotFoundError(false)
+
+    // Call the parent handler
+    onSectionClick(sectionTitle, subsection)
+
+    // After a delay, if this is still the last clicked subsection,
+    // show the error message
+    setTimeout(() => {
+      if (lastClickedSubsection === subsection) {
+        setShowNotFoundError(true)
+        setTimeout(() => setShowNotFoundError(false), 3000) // Hide after 3 seconds
+      }
+    }, 1000) // Wait 1 second for the scroll to happen
+  }
+
   return (
     <aside className="w-72 bg-white border-r p-6 flex flex-col">
       <div className="mb-8">
@@ -33,7 +59,7 @@ export const Sidebar = ({
       <div className="mt-6 text-sm">
         <h2 className="font-semibold mb-3">{activeChapter}</h2>
         <div className="space-y-4">
-          {documentStructure[activeChapter].sections.map((section) => (
+          {documentStructure[activeChapter]?.sections.map((section) => (
             <div key={section.title}>
               <h3 className="text-gray-600 mb-2">{section.title}</h3>
               <ul className="ml-4 space-y-1 text-gray-500">
@@ -41,11 +67,14 @@ export const Sidebar = ({
                   <li 
                     key={subsection}
                     className={`flex items-center space-x-2 cursor-pointer hover:text-blue-600 ${
+                      !isPdfLoaded ? 'opacity-50 cursor-not-allowed' : ''
+                    } ${
                       activeSection === section.title && activeSubsection === subsection
                         ? 'text-blue-600'
                         : ''
                     }`}
-                    onClick={() => onSectionClick(section.title, subsection)}
+                    onClick={() => handleSubsectionClick(section.title, subsection)}
+                    title={!isPdfLoaded ? 'Warten Sie bis das PDF geladen ist' : ''}
                   >
                     <ChevronRight className="w-4 h-4" />
                     <span>{subsection}</span>
@@ -56,6 +85,11 @@ export const Sidebar = ({
           ))}
         </div>
       </div>
+      {showNotFoundError && (
+        <div className="mt-4 p-2 bg-red-50 text-red-600 text-sm rounded">
+          Abschnitt konnte nicht gefunden werden
+        </div>
+      )}
     </aside>
   )
 } 

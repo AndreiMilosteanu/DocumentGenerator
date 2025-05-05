@@ -4,10 +4,60 @@ import { Copy, Download, Loader, FileText } from 'lucide-react'
 export const PdfPreview = ({
   pdfUrl,
   onDownloadPdf,
-  isGeneratingPdf
+  isGeneratingPdf,
+  activeSubsection,
+  onLoad
 }) => {
   const [isCopyingText, setIsCopyingText] = useState(false)
   const iframeRef = useRef(null)
+
+  // Function to scroll to a specific section in the PDF
+  const scrollToSection = async (sectionTitle) => {
+    if (!iframeRef.current || !pdfUrl) return false
+
+    try {
+      const iframe = iframeRef.current
+      const iframeWindow = iframe.contentWindow
+
+      // Search for the section title in the PDF content
+      const searchText = sectionTitle.toLowerCase()
+      const textElements = iframeWindow.document.querySelectorAll('.textLayer > span')
+      
+      for (let element of textElements) {
+        if (element.textContent.toLowerCase().includes(searchText)) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          // Highlight the section temporarily
+          const originalBackground = element.style.backgroundColor
+          element.style.backgroundColor = 'rgba(59, 130, 246, 0.2)' // Light blue highlight
+          setTimeout(() => {
+            element.style.backgroundColor = originalBackground
+          }, 2000)
+          return true
+        }
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to scroll to section:', error)
+      return false
+    }
+  }
+
+  // Effect to scroll to active subsection when it changes
+  React.useEffect(() => {
+    if (activeSubsection) {
+      scrollToSection(activeSubsection)
+    }
+  }, [activeSubsection, pdfUrl])
+
+  const handleIframeLoad = () => {
+    console.log('PDF iframe loaded')
+    if (onLoad) {
+      // Give a small delay to ensure PDF is fully rendered
+      setTimeout(() => {
+        onLoad()
+      }, 500)
+    }
+  }
 
   const handleCopyText = async () => {
     if (!iframeRef.current) return
@@ -22,12 +72,6 @@ export const PdfPreview = ({
 
       // Simulate Ctrl+A
       iframeWindow.document.execCommand('selectAll', false, null)
-      // Or as a fallback:
-      // const selection = iframeWindow.getSelection()
-      // const range = iframeWindow.document.createRange()
-      // range.selectNodeContents(iframeWindow.document.body)
-      // selection.removeAllRanges()
-      // selection.addRange(range)
 
       // Copy the selected text
       await navigator.clipboard.writeText(iframeWindow.getSelection().toString())
@@ -80,6 +124,7 @@ export const PdfPreview = ({
             src={pdfUrl}
             className="w-full h-full"
             title="PDF Preview"
+            onLoad={handleIframeLoad}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">

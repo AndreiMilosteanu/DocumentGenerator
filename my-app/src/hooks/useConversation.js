@@ -1,35 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { API_BASE_URL } from '../constants/documentStructure'
 
-const STORAGE_KEYS = {
-  DOCUMENT_IDS: 'documentIds',
-  MESSAGES: 'conversationMessages'
-}
-
 export const useConversation = () => {
-  // Initialize state from localStorage or default values
-  const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem(STORAGE_KEYS.MESSAGES)
-    return savedMessages ? JSON.parse(savedMessages) : {}
-  })
+  const [messages, setMessages] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [isStartingConversation, setIsStartingConversation] = useState(false)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [pdfUrls, setPdfUrls] = useState({})
-  const [documentIds, setDocumentIds] = useState(() => {
-    const savedIds = localStorage.getItem(STORAGE_KEYS.DOCUMENT_IDS)
-    return savedIds ? JSON.parse(savedIds) : {}
-  })
-
-  // Persist state changes to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.DOCUMENT_IDS, JSON.stringify(documentIds))
-  }, [documentIds])
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages))
-  }, [messages])
+  const [documentIds, setDocumentIds] = useState({})
 
   const fetchPdfPreview = async (documentId, chapter) => {
     setIsGeneratingPdf(true)
@@ -48,29 +27,6 @@ export const useConversation = () => {
       console.error('Failed to fetch PDF:', error)
     } finally {
       setIsGeneratingPdf(false)
-    }
-  }
-
-  const downloadPdf = async (chapter) => {
-    const documentId = documentIds[chapter]
-    if (!documentId) return
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`)
-      if (!response.ok) {
-        throw new Error(`Failed to download PDF: ${response.status} ${response.statusText}`)
-      }
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${chapter}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('Failed to download PDF:', error)
     }
   }
 
@@ -222,6 +178,29 @@ export const useConversation = () => {
       }))
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const downloadPdf = async (chapter) => {
+    const documentId = documentIds[chapter]
+    if (!documentId) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`)
+      if (!response.ok) {
+        throw new Error(`Failed to download PDF: ${response.status} ${response.statusText}`)
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${chapter}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to download PDF:', error)
     }
   }
 

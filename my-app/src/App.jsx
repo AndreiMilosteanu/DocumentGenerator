@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { ChatMessages } from './components/ChatMessages'
 import { ChatInput } from './components/ChatInput'
@@ -90,6 +90,7 @@ export default function App() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [dragActive, setDragActive] = useState(false)
   const [fileError, setFileError] = useState('')
+  const [isPdfLoaded, setIsPdfLoaded] = useState(false)
 
   const {
     currentMessages,
@@ -105,6 +106,17 @@ export default function App() {
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const fileInputRef = useRef(null)
+
+  // Reset PDF loaded state when chapter changes or when generating new PDF
+  useEffect(() => {
+    if (isGeneratingPdf) {
+      setIsPdfLoaded(false)
+    }
+  }, [isGeneratingPdf])
+
+  useEffect(() => {
+    setIsPdfLoaded(false)
+  }, [activeChapter])
 
   const handleChapterClick = (chapterName) => {
     setActiveChapter(chapterName)
@@ -178,6 +190,11 @@ export default function App() {
     if (file) handleFile(file)
   }
 
+  const handlePdfLoad = () => {
+    console.log('PDF loaded, enabling subsections')
+    setIsPdfLoaded(true)
+  }
+
   const handleDownloadPDF = async () => {
     await downloadPdf(activeChapter)
   }
@@ -191,6 +208,7 @@ export default function App() {
           activeSubsection={activeSubsection}
           onChapterClick={handleChapterClick}
           onSectionClick={handleSectionClick}
+          isPdfLoaded={isPdfLoaded && !isGeneratingPdf && pdfUrls[activeChapter]}
         />
 
         <main className="w-[600px] flex flex-col bg-white border-r overflow-hidden">
@@ -239,6 +257,8 @@ export default function App() {
           pdfUrl={pdfUrls[activeChapter]}
           onDownloadPdf={handleDownloadPDF}
           isGeneratingPdf={isGeneratingPdf}
+          activeSubsection={activeSubsection}
+          onLoad={handlePdfLoad}
         />
       </div>
     </div>
