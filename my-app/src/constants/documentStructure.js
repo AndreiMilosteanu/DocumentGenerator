@@ -1,3 +1,15 @@
+export const API_BASE_URL = 'http://localhost:8000'
+
+// Log the API base URL on application init
+console.log('API Base URL:', API_BASE_URL)
+
+export const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+]
+
+export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
 export const documentStructure = {
   'Deklarationsanalyse': {
     title: 'Deklarationsanalyse',
@@ -71,11 +83,4 @@ export const documentStructure = {
       }
     ]
   }
-}
-
-export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB in bytes
-export const ALLOWED_FILE_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-]
-export const API_BASE_URL = 'http://localhost:8000' 
+} 

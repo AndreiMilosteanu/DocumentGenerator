@@ -6,7 +6,8 @@ export const PdfPreview = ({
   onDownloadPdf,
   isGeneratingPdf,
   activeSubsection,
-  onLoad
+  onLoad,
+  className = ""
 }) => {
   const [isCopyingText, setIsCopyingText] = useState(false)
   const iframeRef = useRef(null)
@@ -86,7 +87,7 @@ export const PdfPreview = ({
   }
 
   return (
-    <aside className="flex-1 bg-white p-6 flex flex-col">
+    <aside className={`flex-1 bg-white p-6 flex flex-col ${className}`}>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-semibold">Dokumentvorschau</h2>
         <div className="flex items-center space-x-2">
