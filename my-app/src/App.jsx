@@ -11,6 +11,8 @@ export default function App() {
   const [activeProject, setActiveProject] = useState(null)
   const [activeSection, setActiveSection] = useState(null)
   const [activeSubsection, setActiveSubsection] = useState(null)
+  const [activeSectionKey, setActiveSectionKey] = useState(null)
+  const [activeSubsectionKey, setActiveSubsectionKey] = useState(null)
   const [inputMessage, setInputMessage] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
   const [dragActive, setDragActive] = useState(false)
@@ -21,15 +23,19 @@ export default function App() {
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
 
   const {
-    currentMessages,
+    getCurrentMessages,
     isLoading,
     isStartingConversation,
     isGeneratingPdf,
     pdfUrls,
     startNewConversation,
+    startSubsectionConversation,
+    selectSubsection,
     sendMessage,
     downloadPdf,
-    loadExistingProject
+    loadExistingProject,
+    activeSubsection: getActiveSubsection,
+    subsectionStatus
   } = useConversation()
 
   const messagesEndRef = useRef(null)
@@ -51,6 +57,14 @@ export default function App() {
   useEffect(() => {
     setIsPdfLoaded(false)
   }, [activeProject])
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current && activeProject && activeSectionKey && activeSubsectionKey) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [getCurrentMessages(activeProject?.documentId, activeSectionKey, activeSubsectionKey), 
+      activeProject, activeSectionKey, activeSubsectionKey])
 
   // Fetch user's projects
   const fetchProjects = async () => {
@@ -100,29 +114,103 @@ export default function App() {
     }
   }
 
+  // Find section and subsection details by keys
+  const getSectionAndSubsectionTitles = (topic, sectionKey, subsectionKey) => {
+    if (!topic || !sectionKey || !subsectionKey) return { sectionTitle: null, subsectionTitle: null };
+    
+    const topicData = documentStructure[topic];
+    if (!topicData) return { sectionTitle: null, subsectionTitle: null };
+    
+    const section = topicData.sections.find(s => s.key === sectionKey);
+    if (!section) return { sectionTitle: null, subsectionTitle: null };
+    
+    const subsection = section.subsections.find(s => s.key === subsectionKey);
+    if (!subsection) return { sectionTitle: null, subsectionTitle: null };
+    
+    return {
+      sectionTitle: section.title,
+      subsectionTitle: subsection.title
+    };
+  }
+
   // Handle selecting an existing project
   const handleProjectSelect = async (project) => {
     console.log('Selecting project:', project);
     setActiveProject(project)
     
-    // Set default section and subsection for the selected topic
-    const topicData = documentStructure[project.topic]
-    if (topicData) {
-      setActiveSection(topicData.sections[0].title)
-      setActiveSubsection(topicData.sections[0].subsections[0])
-    }
-
     // Load project data from backend including chat history and PDF status
     const projectDetails = await loadExistingProject(project.id, project.documentId)
     
     // Update PDF loaded state based on the project details
     setIsPdfLoaded(projectDetails.hasPdf)
     
-    // If we have section data, use it to navigate to the most relevant section
-    if (projectDetails.sectionData && Object.keys(projectDetails.sectionData).length > 0) {
-      console.log('Using project section data:', projectDetails.sectionData);
-      // This is where you could implement logic to navigate to the most relevant section
-      // based on the section_data returned from the API
+    // Get available subsections
+    const availableSubsections = projectDetails.subsections || {};
+    console.log('Available subsections:', availableSubsections);
+    
+    // Get active subsection from conversation hook
+    const active = getActiveSubsection(project.documentId);
+    console.log('Active subsection from hook:', active);
+    
+    // If there's an active subsection, use it
+    if (active && active.section && active.subsection) {
+      console.log('Using active subsection:', active);
+      setActiveSectionKey(active.section);
+      setActiveSubsectionKey(active.subsection);
+      
+      // Get section and subsection titles
+      const { sectionTitle, subsectionTitle } = getSectionAndSubsectionTitles(
+        project.topic, 
+        active.section, 
+        active.subsection
+      );
+      
+      setActiveSection(sectionTitle);
+      setActiveSubsection(subsectionTitle);
+      
+      // Ensure we have the messages for this subsection
+      await selectSubsection(project.documentId, active.section, active.subsection);
+    } else {
+      // No active subsection, try to find one with an existing conversation
+      const subsectionWithConversation = Object.entries(availableSubsections).find(([, details]) => details?.hasConversation);
+      
+      if (subsectionWithConversation) {
+        // Use an existing subsection
+        const [subsectionPath, details] = subsectionWithConversation;
+        console.log('Found subsection with conversation:', subsectionPath, details);
+        
+        const [section, subsection] = subsectionPath.split('/');
+        setActiveSectionKey(section);
+        setActiveSubsectionKey(subsection);
+        
+        // Get section and subsection titles
+        const { sectionTitle, subsectionTitle } = getSectionAndSubsectionTitles(
+          project.topic, 
+          section, 
+          subsection
+        );
+        
+        setActiveSection(sectionTitle);
+        setActiveSubsection(subsectionTitle);
+        
+        // Select this subsection
+        await selectSubsection(project.documentId, section, subsection);
+      } else {
+        // No existing subsections with conversations, use the first section/subsection
+        const topicData = documentStructure[project.topic];
+        if (topicData && topicData.sections.length > 0) {
+          const firstSection = topicData.sections[0];
+          const firstSubsection = firstSection.subsections[0];
+          
+          setActiveSection(firstSection.title);
+          setActiveSectionKey(firstSection.key);
+          setActiveSubsection(firstSubsection.title);
+          setActiveSubsectionKey(firstSubsection.key);
+          
+          // Start conversation for this subsection
+          await startSubsectionConversation(project.documentId, firstSection.key, firstSubsection.key);
+        }
+      }
     }
   }
 
@@ -192,13 +280,6 @@ export default function App() {
       // Set it as the active project
       setActiveProject(newProject)
       
-      // Set default section and subsection
-      const topicData = documentStructure[topicName]
-      if (topicData) {
-        setActiveSection(topicData.sections[0].title)
-        setActiveSubsection(topicData.sections[0].subsections[0])
-      }
-      
       // Wait a moment to ensure UI updates completely
       await new Promise(resolve => setTimeout(resolve, 50));
       
@@ -208,12 +289,28 @@ export default function App() {
       const conversationResult = await startNewConversation(topicName, projectData.document_id)
       
       if (conversationResult.success) {
-        console.log('Conversation started successfully, updating project status');
+        console.log('Conversation started successfully for section/subsection:', conversationResult.section, conversationResult.subsection);
+        
         // Update the project with any additional info from the conversation result
         setActiveProject(prevProject => ({
           ...prevProject,
           hasPdf: conversationResult.hasPdf
         }))
+        
+        // Set the active section and subsection based on the API response
+        const { section, subsection } = conversationResult;
+        setActiveSectionKey(section);
+        setActiveSubsectionKey(subsection);
+        
+        // Get section and subsection titles
+        const { sectionTitle, subsectionTitle } = getSectionAndSubsectionTitles(
+          topicName, 
+          section, 
+          subsection
+        );
+        
+        setActiveSection(sectionTitle);
+        setActiveSubsection(subsectionTitle);
       } else {
         console.error('Failed to start conversation:', conversationResult.error);
       }
@@ -248,9 +345,14 @@ export default function App() {
       
       // Set default section and subsection
       const topicData = documentStructure[topicName]
-      if (topicData) {
-        setActiveSection(topicData.sections[0].title)
-        setActiveSubsection(topicData.sections[0].subsections[0])
+      if (topicData && topicData.sections.length > 0) {
+        const firstSection = topicData.sections[0];
+        const firstSubsection = firstSection.subsections[0];
+        
+        setActiveSection(firstSection.title);
+        setActiveSectionKey(firstSection.key);
+        setActiveSubsection(firstSubsection.title);
+        setActiveSubsectionKey(firstSubsection.key);
       }
       
       // Show error notification
@@ -260,9 +362,33 @@ export default function App() {
     }
   }
 
-  const handleSectionClick = (sectionTitle, subsection) => {
-    setActiveSection(sectionTitle)
-    setActiveSubsection(subsection)
+  const handleSectionClick = async (sectionTitle, subsectionTitle, sectionKey, subsectionKey) => {
+    if (!activeProject) return;
+    
+    console.log('Switching to section/subsection:', {
+      sectionTitle, subsectionTitle, sectionKey, subsectionKey
+    });
+    
+    // Update UI state
+    setActiveSection(sectionTitle);
+    setActiveSectionKey(sectionKey);
+    setActiveSubsection(subsectionTitle);
+    setActiveSubsectionKey(subsectionKey);
+    
+    // Check if this subsection has an existing conversation
+    const docSubsections = subsectionStatus[activeProject.documentId] || {};
+    const subsectionPath = `${sectionKey}/${subsectionKey}`;
+    const hasConversation = docSubsections[subsectionPath]?.hasConversation;
+    
+    if (hasConversation) {
+      // If conversation exists, select it
+      console.log('Selecting existing subsection conversation');
+      await selectSubsection(activeProject.documentId, sectionKey, subsectionKey);
+    } else {
+      // If not, start a new conversation for this subsection
+      console.log('Starting new subsection conversation');
+      await startSubsectionConversation(activeProject.documentId, sectionKey, subsectionKey);
+    }
   }
 
   const handleSendMessage = async (e) => {
@@ -271,7 +397,7 @@ export default function App() {
     if (!message || !activeProject) return
 
     setInputMessage('')
-    await sendMessage(message, activeProject.topic, activeProject.documentId)
+    await sendMessage(message, activeProject.documentId)
   }
 
   const validateFile = (file) => {
@@ -333,6 +459,13 @@ export default function App() {
     await downloadPdf(activeProject.topic, activeProject.documentId)
   }
 
+  // Get the current active subsection
+  const activeSubsectionData = activeProject ? getActiveSubsection(activeProject.documentId) : null;
+  
+  // Get messages for the current subsection
+  const currentMessages = activeProject && activeSectionKey && activeSubsectionKey ? 
+    getCurrentMessages(activeProject.documentId, activeSectionKey, activeSubsectionKey) : [];
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <div className="flex flex-1 overflow-hidden">
@@ -340,12 +473,15 @@ export default function App() {
           activeChapter={activeProject?.topic}
           activeSection={activeSection}
           activeSubsection={activeSubsection}
+          activeSectionKey={activeSectionKey}
+          activeSubsectionKey={activeSubsectionKey}
           onSectionClick={handleSectionClick}
           isPdfLoaded={isPdfLoaded && !isGeneratingPdf && activeProject && pdfUrls[activeProject.documentId]}
           projects={projects}
           onProjectSelect={handleProjectSelect}
           onNewProjectClick={handleNewProjectClick}
           isLoadingProjects={isLoadingProjects}
+          subsectionStatus={activeProject ? subsectionStatus[activeProject.documentId] : {}}
           className="w-72 flex-shrink-0"
         />
 
@@ -378,7 +514,7 @@ export default function App() {
             {activeProject ? (
               <>
                 <ChatMessages
-                  messages={currentMessages(activeProject.documentId)}
+                  messages={currentMessages}
                   isLoading={isLoading}
                   isStartingConversation={isStartingConversation}
                   messagesEndRef={messagesEndRef}
@@ -389,6 +525,7 @@ export default function App() {
                   onInputChange={(e) => setInputMessage(e.target.value)}
                   onSubmit={handleSendMessage}
                   isLoading={isLoading}
+                  hasActiveConversation={!!activeSubsectionData}
                   selectedFile={selectedFile}
                   onFileSelect={handleFileSelect}
                   onFileRemove={() => setSelectedFile(null)}
@@ -414,6 +551,7 @@ export default function App() {
           pdfUrl={activeProject ? pdfUrls[activeProject.documentId] : null}
           onDownloadPdf={handleDownloadPDF}
           isGeneratingPdf={isGeneratingPdf}
+          activeSection={activeSection}
           activeSubsection={activeSubsection}
           onLoad={handlePdfLoad}
           className="flex-1"

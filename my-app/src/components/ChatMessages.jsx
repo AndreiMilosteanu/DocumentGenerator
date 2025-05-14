@@ -6,7 +6,7 @@ export const ChatMessages = ({
   messages, 
   isLoading, 
   isStartingConversation, 
-  messagesEndRef 
+  messagesEndRef
 }) => {
   return (
     <div className="flex-1 overflow-y-auto min-h-0">
@@ -53,6 +53,14 @@ export const ChatMessages = ({
               </div>
             </div>
           )}
+          
+          {messages.length === 0 && !isLoading && !isStartingConversation && (
+            <div className="text-center text-gray-500 py-8">
+              <p>Keine Nachrichten in diesem Abschnitt.</p>
+              <p className="text-sm mt-2">Stellen Sie eine Frage, um die Konversation zu beginnen.</p>
+            </div>
+          )}
+          
           <div ref={messagesEndRef} />
         </div>
       </div>

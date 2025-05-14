@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react'
-import { ChevronRight, ChevronDown, Folder, FolderOpen, Plus, FileText, Loader, AlertCircle } from 'lucide-react'
+import { ChevronRight, ChevronDown, Folder, FolderOpen, Plus, FileText, Loader, AlertCircle, MessageCircle } from 'lucide-react'
 import { documentStructure } from '../constants/documentStructure'
 
 export const Sidebar = ({ 
   activeChapter, 
-  activeSection, 
-  activeSubsection,
+  activeSectionKey,
+  activeSubsectionKey,
   onSectionClick,
   isPdfLoaded,
+  subsectionStatus = {}, // Status of subsections with conversations
   projects = [], // List of user's projects
   onProjectSelect, // Callback when user selects an existing project
   onNewProjectClick, // Callback when user clicks to create a new project
@@ -40,22 +41,22 @@ export const Sidebar = ({
     return groupedProjects
   }, [projects])
 
-  const handleSubsectionClick = (sectionTitle, subsection) => {
+  const handleSubsectionClick = (sectionTitle, subsectionTitle, sectionKey, subsectionKey) => {
     if (!isPdfLoaded) return // Do nothing if PDF is not loaded
 
     // Set this subsection as the last clicked one
-    setLastClickedSubsection(subsection)
+    setLastClickedSubsection(subsectionTitle)
     
     // Clear any previous error message
     setShowNotFoundError(false)
 
     // Call the parent handler
-    onSectionClick(sectionTitle, subsection)
+    onSectionClick(sectionTitle, subsectionTitle, sectionKey, subsectionKey)
 
     // After a delay, if this is still the last clicked subsection,
     // show the error message
     setTimeout(() => {
-      if (lastClickedSubsection === subsection) {
+      if (lastClickedSubsection === subsectionTitle) {
         setShowNotFoundError(true)
         setTimeout(() => setShowNotFoundError(false), 3000) // Hide after 3 seconds
       }
@@ -71,6 +72,12 @@ export const Sidebar = ({
 
   // Count total projects
   const totalProjects = projects.length
+
+  // Check if a subsection has a conversation
+  const hasConversation = (sectionKey, subsectionKey) => {
+    const key = `${sectionKey}/${subsectionKey}`;
+    return subsectionStatus[key]?.hasConversation || false;
+  }
 
   return (
     <aside className="w-72 bg-white border-r p-6 flex flex-col">
@@ -185,36 +192,39 @@ export const Sidebar = ({
           <h2 className="font-semibold mb-3">{activeChapter}</h2>
           <div className="space-y-4">
             {documentStructure[activeChapter]?.sections.map((section) => (
-              <div key={section.title}>
+              <div key={section.key}>
                 <h3 className="text-gray-600 mb-2">{section.title}</h3>
                 <ul className="ml-4 space-y-1 text-gray-500">
-                  {section.subsections.map((subsection) => (
-                    <li 
-                      key={subsection}
-                      className={`flex items-center space-x-2 cursor-pointer hover:text-blue-600 ${
-                        !isPdfLoaded ? 'opacity-50 cursor-not-allowed' : ''
-                      } ${
-                        activeSection === section.title && activeSubsection === subsection
-                          ? 'text-blue-600'
-                          : ''
-                      }`}
-                      onClick={() => handleSubsectionClick(section.title, subsection)}
-                      title={!isPdfLoaded ? 'Warten Sie bis das PDF geladen ist' : ''}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                      <span>{subsection}</span>
-                    </li>
-                  ))}
+                  {section.subsections.map((subsection) => {
+                    const hasActiveConversation = hasConversation(section.key, subsection.key);
+                    return (
+                      <li
+                        key={subsection.key}
+                        onClick={() => handleSubsectionClick(section.title, subsection.title, section.key, subsection.key)}
+                        className={`cursor-pointer py-1 px-2 rounded flex items-center justify-between ${
+                          section.key === activeSectionKey && subsection.key === activeSubsectionKey
+                            ? 'bg-blue-50 text-blue-600 font-medium'
+                            : isPdfLoaded ? 'hover:bg-gray-50' : 'opacity-50 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>{subsection.title}</span>
+                        {hasActiveConversation && (
+                          <MessageCircle className="w-3 h-3 text-blue-600" />
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {showNotFoundError && (
-        <div className="mt-4 p-2 bg-red-50 text-red-600 text-sm rounded">
-          Abschnitt konnte nicht gefunden werden
+          
+          {/* Error message for when we can't find the section in the PDF */}
+          {showNotFoundError && (
+            <div className="mt-4 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs">
+              <p>Diese Sektion konnte im PDF nicht gefunden werden.</p>
+            </div>
+          )}
         </div>
       )}
     </aside>

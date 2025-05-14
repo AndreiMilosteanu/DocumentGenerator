@@ -6,6 +6,7 @@ export const ChatInput = ({
   onInputChange,
   onSubmit,
   isLoading,
+  hasActiveConversation,
   selectedFile,
   onFileSelect,
   onFileRemove,
@@ -49,10 +50,11 @@ export const ChatInput = ({
             onChange={onInputChange}
             placeholder="Schreiben Sie Ihre Antwort..."
             className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={!hasActiveConversation}
           />
           <button
             type="submit"
-            disabled={!inputMessage.trim() || isLoading}
+            disabled={!inputMessage.trim() || isLoading || !hasActiveConversation}
             className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-5 h-5" />
@@ -96,6 +98,11 @@ export const ChatInput = ({
             <div className="text-sm text-red-500 flex items-center space-x-2">
               <XCircle className="w-4 h-4" />
               <span>{fileError}</span>
+            </div>
+          )}
+          {!hasActiveConversation && (
+            <div className="text-sm text-gray-500 mt-2 text-center">
+              Bitte wählen Sie einen Abschnitt aus, um die Konversation zu beginnen
             </div>
           )}
         </div>

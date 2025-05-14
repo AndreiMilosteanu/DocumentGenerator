@@ -16,16 +16,28 @@ export const documentStructure = {
     icon: '📄',
     sections: [
       {
+        key: 'Projekt Details',
         title: 'Projekt Details',
-        subsections: ['Standort', 'Auftraggeber']
+        subsections: [
+          { key: 'Standort', title: 'Standort' },
+          { key: 'Auftraggeber', title: 'Auftraggeber' }
+        ]
       },
       {
+        key: 'Projekt Objectives',
         title: 'Projekt Objectives',
-        subsections: ['Ziele', 'Anforderungen']
+        subsections: [
+          { key: 'Ziele', title: 'Ziele' },
+          { key: 'Anforderungen', title: 'Anforderungen' }
+        ]
       },
       {
+        key: 'Anhänge',
         title: 'Anhänge',
-        subsections: ['Dokumente', 'Bilder']
+        subsections: [
+          { key: 'Dokumente', title: 'Dokumente' },
+          { key: 'Bilder', title: 'Bilder' }
+        ]
       }
     ]
   },
@@ -34,16 +46,28 @@ export const documentStructure = {
     icon: '🔍',
     sections: [
       {
+        key: 'Projekt Details',
         title: 'Projekt Details',
-        subsections: ['Untersuchungsmethoden', 'Probenentnahme']
+        subsections: [
+          { key: 'Untersuchungsmethoden', title: 'Untersuchungsmethoden' },
+          { key: 'Probenentnahme', title: 'Probenentnahme' }
+        ]
       },
       {
+        key: 'Projekt Objectives',
         title: 'Projekt Objectives',
-        subsections: ['Bodenbeschaffenheit', 'Analyseergebnisse']
+        subsections: [
+          { key: 'Bodenbeschaffenheit', title: 'Bodenbeschaffenheit' },
+          { key: 'Analyseergebnisse', title: 'Analyseergebnisse' }
+        ]
       },
       {
+        key: 'Anhänge',
         title: 'Anhänge',
-        subsections: ['Laborberichte', 'Fotos']
+        subsections: [
+          { key: 'Laborberichte', title: 'Laborberichte' },
+          { key: 'Fotos', title: 'Fotos' }
+        ]
       }
     ]
   },
@@ -52,16 +76,28 @@ export const documentStructure = {
     icon: '📋',
     sections: [
       {
+        key: 'Projekt Details',
         title: 'Projekt Details',
-        subsections: ['Grundstücksdaten', 'Bauvorhaben']
+        subsections: [
+          { key: 'Grundstücksdaten', title: 'Grundstücksdaten' },
+          { key: 'Bauvorhaben', title: 'Bauvorhaben' }
+        ]
       },
       {
+        key: 'Projekt Objectives',
         title: 'Projekt Objectives',
-        subsections: ['Bewertung', 'Empfehlungen']
+        subsections: [
+          { key: 'Bewertung', title: 'Bewertung' },
+          { key: 'Empfehlungen', title: 'Empfehlungen' }
+        ]
       },
       {
+        key: 'Anhänge',
         title: 'Anhänge',
-        subsections: ['Gutachten', 'Pläne']
+        subsections: [
+          { key: 'Gutachten', title: 'Gutachten' },
+          { key: 'Pläne', title: 'Pläne' }
+        ]
       }
     ]
   },
@@ -70,16 +106,28 @@ export const documentStructure = {
     icon: '🔨',
     sections: [
       {
+        key: 'Projekt Details',
         title: 'Projekt Details',
-        subsections: ['Versuchsaufbau', 'Durchführung']
+        subsections: [
+          { key: 'Versuchsaufbau', title: 'Versuchsaufbau' },
+          { key: 'Durchführung', title: 'Durchführung' }
+        ]
       },
       {
+        key: 'Projekt Objectives',
         title: 'Projekt Objectives',
-        subsections: ['Messergebnisse', 'Auswertung']
+        subsections: [
+          { key: 'Messergebnisse', title: 'Messergebnisse' },
+          { key: 'Auswertung', title: 'Auswertung' }
+        ]
       },
       {
+        key: 'Anhänge',
         title: 'Anhänge',
-        subsections: ['Messprotokolle', 'Diagramme']
+        subsections: [
+          { key: 'Messprotokolle', title: 'Messprotokolle' },
+          { key: 'Diagramme', title: 'Diagramme' }
+        ]
       }
     ]
   }
