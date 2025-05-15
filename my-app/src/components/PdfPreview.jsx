@@ -87,8 +87,8 @@ export const PdfPreview = ({
   }
 
   return (
-    <aside className={`flex-1 bg-white p-6 flex flex-col ${className}`}>
-      <div className="flex justify-between items-center mb-6">
+    <div className={`flex flex-col h-full ${className}`}>
+      <div className="border-b bg-white flex justify-between items-center px-4 py-3">
         <h2 className="text-lg font-semibold">Dokumentvorschau</h2>
         <div className="flex items-center space-x-2">
           <button
@@ -118,7 +118,7 @@ export const PdfPreview = ({
         </div>
       </div>
 
-      <div className="flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
+      <div className="flex-1 bg-white overflow-hidden">
         {pdfUrl ? (
           <iframe
             ref={iframeRef}
@@ -139,6 +139,6 @@ export const PdfPreview = ({
           </div>
         )}
       </div>
-    </aside>
+    </div>
   )
 } 

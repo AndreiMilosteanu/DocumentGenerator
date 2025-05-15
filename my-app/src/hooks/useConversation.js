@@ -1,7 +1,14 @@
 import { useState } from 'react'
-import { API_BASE_URL } from '../constants/documentStructure'
+import { API_BASE_URL, documentStructure } from '../constants/documentStructure'
+import { useAuth } from '../contexts/AuthContext'
+
+// Debug helper to track conversation calls
+const debugConversation = (functionName, data) => {
+  console.log(`%c [DEBUG-CONVERSATION] ${functionName}`, 'background: #ffa500; color: #000; padding: 2px 5px; border-radius: 3px; font-weight: bold', data);
+};
 
 export const useConversation = () => {
+  const { getAuthHeader } = useAuth();
   const [messages, setMessages] = useState({}) // Store messages by document ID and subsection
   const [isLoading, setIsLoading] = useState(false)
   const [isStartingConversation, setIsStartingConversation] = useState(false)
@@ -19,7 +26,11 @@ export const useConversation = () => {
       const url = `${API_BASE_URL}/documents/${documentId}/pdf`;
       console.log('Making API request to fetch PDF:', url);
       
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        headers: {
+          ...getAuthHeader()
+        }
+      })
       if (!response.ok) {
         const errorText = await response.text();
         console.error('PDF fetch failed:', {
@@ -49,24 +60,44 @@ export const useConversation = () => {
   // Fetch all subsections for a document and their conversation status
   const fetchSubsections = async (documentId) => {
     console.log('Fetching subsections for document:', documentId);
+    debugConversation('fetchSubsections - ENTRY', { documentId });
     
     try {
-      const response = await fetch(`${API_BASE_URL}/conversation/${documentId}/subsections`);
+      const url = `${API_BASE_URL}/conversation/${documentId}/subsections`;
+      debugConversation('fetchSubsections - API CALL', { documentId, url });
+      
+      const response = await fetch(url, {
+        headers: {
+          ...getAuthHeader()
+        }
+      });
+      
+      const responseText = await response.text();
+      
       if (!response.ok) {
-        const errorText = await response.text();
         console.error('Failed to fetch subsections:', {
           status: response.status,
           statusText: response.statusText,
-          responseText: errorText
+          responseText
         });
         throw new Error(`Failed to fetch subsections: ${response.status} ${response.statusText}`);
       }
       
-      const subsections = await response.json();
-      console.log('Fetched subsections:', subsections);
+      // Try to parse the response
+      let subsections;
+      try {
+        subsections = JSON.parse(responseText);
+        debugConversation('fetchSubsections - API RESPONSE', { documentId, subsections });
+      } catch (error) {
+        console.error('Failed to parse subsections response:', error);
+        throw new Error('Invalid subsections response format from server');
+      }
       
       if (!Array.isArray(subsections)) {
         console.error('Expected subsections to be an array, but got:', typeof subsections);
+        debugConversation('fetchSubsections - INVALID RESPONSE FORMAT', { 
+          documentId, responseType: typeof subsections, subsections 
+        });
         return {};
       }
       
@@ -82,27 +113,38 @@ export const useConversation = () => {
         const key = `${sub.section}/${sub.subsection}`;
         subsectionStatusMap[key] = {
           hasConversation: !!sub.has_conversation,
+          hasMessages: !!sub.has_messages,
           section: sub.section,
           subsection: sub.subsection
         };
       });
       
+      debugConversation('fetchSubsections - PROCESSED STATUS MAP', { 
+        documentId, mapSize: Object.keys(subsectionStatusMap).length, subsectionStatusMap 
+      });
+      
+      // Log the result
       console.log('Processed subsection status map:', subsectionStatusMap);
       
+      // Update state
       setSubsectionStatus(prev => ({
         ...prev,
         [documentId]: subsectionStatusMap
       }));
       
+      debugConversation('fetchSubsections - EXIT SUCCESS', { documentId });
       return subsectionStatusMap;
     } catch (error) {
       console.error('Failed to fetch subsections:', error);
+      debugConversation('fetchSubsections - EXIT ERROR', { documentId, error: error.message });
       return {};
     }
   }
 
   // Fetch messages for a specific subsection
   const fetchSubsectionMessages = async (documentId, section, subsection) => {
+    debugConversation('fetchSubsectionMessages - ENTRY', { documentId, section, subsection });
+    
     console.log('%c Fetching messages for subsection:', 'background: #34d399; color: #000', { 
       documentId, 
       section, 
@@ -116,9 +158,14 @@ export const useConversation = () => {
     
     try {
       const url = `${API_BASE_URL}/conversation/${documentId}/messages/${section}/${subsection}`;
+      debugConversation('fetchSubsectionMessages - API CALL', { documentId, section, subsection, url });
       console.log('Messages API URL:', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          ...getAuthHeader()
+        }
+      });
       
       const responseText = await response.text();
       
@@ -150,6 +197,10 @@ export const useConversation = () => {
         console.error('Failed to parse response JSON:', error);
         throw new Error('Invalid response format from server');
       }
+      
+      debugConversation('fetchSubsectionMessages - API RESPONSE', { 
+        documentId, section, subsection, data 
+      });
       
       console.log('%c Fetched subsection messages:', 'background: #34d399; color: #000', data);
       
@@ -184,88 +235,152 @@ export const useConversation = () => {
         id: msg.id || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         role: msg.role || 'assistant',
         content: msg.content || '',
-        timestamp: msg.timestamp || new Date().toISOString()
+        timestamp: msg.timestamp || new Date().toISOString(),
+        source: 'fetchSubsectionMessages'
       }));
       
       // Update messages for this subsection
       const messageKey = `${documentId}/${section}/${subsection}`;
-      setMessages(prev => ({
-        ...prev,
-        [messageKey]: formattedMessages
-      }));
+      debugConversation('fetchSubsectionMessages - STORING MESSAGES', { 
+        documentId, section, subsection, messageKey, messageCount: formattedMessages.length
+      });
+      
+      setMessages(prev => {
+        const newMessages = {
+          ...prev,
+          [messageKey]: formattedMessages
+        };
+        debugConversation('setMessages - IN fetchSubsectionMessages', { 
+          documentId, messageKey, messagesCount: formattedMessages.length, 
+          firstMessage: formattedMessages.length > 0 ? formattedMessages[0].content.substring(0, 50) : 'NONE'
+        });
+        return newMessages;
+      });
+      
+      debugConversation('fetchSubsectionMessages - EXIT SUCCESS', { 
+        documentId, section, subsection, messageCount: formattedMessages.length 
+      });
       
       return formattedMessages;
     } catch (error) {
       console.error('Failed to fetch subsection messages:', error);
+      debugConversation('fetchSubsectionMessages - EXIT ERROR', { 
+        documentId, section, subsection, error: error.message 
+      });
       return [];
     }
   }
 
-  // Start a new conversation for a document
-  const startNewConversation = async (topicName, documentId) => {
-    console.log('Starting new conversation for document:', documentId);
+  // Start a new conversation for a document - should only be used for initial project setup
+  // This uses the /conversation/{document_id}/start endpoint with topic, section, and subsection
+  const startNewConversation = async (topicName, documentId, section, subsection) => {
+    debugConversation('startNewConversation - ENTRY', { documentId, topicName, section, subsection });
+    console.log('Starting new conversation for document (INITIAL PROJECT SETUP):', documentId);
+    
+    // Clear any existing messages for this document's subsections to avoid duplication issues
+    setMessages(prev => {
+      const newMessages = { ...prev };
+      // Filter out any message entries for this document
+      Object.keys(newMessages).forEach(key => {
+        if (key.startsWith(`${documentId}/`)) {
+          delete newMessages[key];
+        }
+      });
+      debugConversation('startNewConversation - CLEARED EXISTING MESSAGES', { documentId });
+      return newMessages;
+    });
+    
     setIsStartingConversation(true)
     
     try {
-      console.log('Making API request to start conversation:', {
+      // Make sure we have all required parameters
+      if (!documentId || !topicName || !section || !subsection) {
+        console.error('Missing required parameters for startNewConversation:', { 
+          documentId, topicName, section, subsection 
+        });
+        throw new Error('Missing required parameters for starting conversation');
+      }
+      
+      debugConversation('startNewConversation - API CALL', {
+        documentId, topicName, section, subsection,
+        url: `${API_BASE_URL}/conversation/${documentId}/start`
+      });
+      
+      console.log('Making API request to start initial conversation:', {
         documentId: documentId,
         topic: topicName,
+        section: section,
+        subsection: subsection,
         url: `${API_BASE_URL}/conversation/${documentId}/start`,
-        requestBody: {
-          topic: topicName
-        }
       })
 
       const response = await fetch(`${API_BASE_URL}/conversation/${documentId}/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader()
         },
         body: JSON.stringify({
-          topic: topicName
+          topic: topicName,
+          section: section,
+          subsection: subsection
         }),
       })
 
+      const responseText = await response.text();
+      
       if (!response.ok) {
-        const errorText = await response.text()
         console.error('Start conversation failed:', {
           status: response.status,
           statusText: response.statusText,
-          body: errorText,
+          body: responseText,
           documentId: documentId,
-          topic: topicName
+          topic: topicName,
+          section: section,
+          subsection: subsection
         })
-        throw new Error(`Failed to start conversation: ${response.status} ${response.statusText} - ${errorText}`)
+        throw new Error(`Failed to start conversation: ${response.status} ${response.statusText} - ${responseText}`)
       }
 
-      const data = await response.json()
+      // Parse the response
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        debugConversation('startNewConversation - API RESPONSE', { documentId, responseData: data });
+      } catch (error) {
+        console.error('Failed to parse response JSON:', error);
+        throw new Error(`Invalid response format from server: ${responseText}`);
+      }
+      
       console.log('Start conversation successful. Response:', {
         documentId: documentId,
         responseData: data,
         topic: topicName
       })
       
-      // The API now returns the section and subsection that was started
-      const { section, subsection, message } = data;
+      // The API returns the section and subsection that was started
+      const { section: returnedSection, subsection: returnedSubsection, message } = data;
       
       // Validate section and subsection
-      if (!section || !subsection) {
+      if (!returnedSection || !returnedSubsection) {
         console.error('API response missing section or subsection:', data);
         throw new Error('API response missing required section/subsection data');
       }
       
-      console.log('Using section and subsection from API response:', { section, subsection });
+      console.log('Using section and subsection from API response:', { 
+        section: returnedSection, subsection: returnedSubsection 
+      });
       
       // Set the active subsection based on the response
       setActiveSubsection(prev => ({
         ...prev,
-        [documentId]: { section, subsection }
+        [documentId]: { section: returnedSection, subsection: returnedSubsection }
       }));
       
       // Update subsection status
       setSubsectionStatus(prev => {
         const docStatus = prev[documentId] || {};
-        const key = `${section}/${subsection}`;
+        const key = `${returnedSection}/${returnedSubsection}`;
         
         return {
           ...prev,
@@ -274,36 +389,75 @@ export const useConversation = () => {
             [key]: {
               hasConversation: true,
               hasMessages: true,
-              section,
-              subsection
+              section: returnedSection,
+              subsection: returnedSubsection
             }
           }
         };
       });
       
+      // Ensure the message isn't empty
+      const welcomeMessage = message || 'Willkommen zum neuen Projekt! Wie kann ich Ihnen helfen?';
+      
       // Store the initial message
-      const messageKey = `${documentId}/${section}/${subsection}`;
-      setMessages(prev => ({
-        ...prev,
-        [messageKey]: [{
-          role: 'assistant',
-          content: message || 'Willkommen zum neuen Projekt! Wie kann ich Ihnen helfen?',
-          timestamp: new Date().toISOString()
-        }]
-      }));
+      const messageKey = `${documentId}/${returnedSection}/${returnedSubsection}`;
+      debugConversation('startNewConversation - STORING MESSAGE', { 
+        documentId, messageKey, welcomeMessage, returnedSection, returnedSubsection 
+      });
+      
+      setMessages(prev => {
+        const newMessages = {
+          ...prev,
+          [messageKey]: [{
+            id: `initial-${Date.now()}`,
+            role: 'assistant',
+            content: welcomeMessage,
+            timestamp: new Date().toISOString(),
+            source: 'startNewConversation'
+          }]
+        };
+        debugConversation('setMessages - IN startNewConversation', { 
+          documentId, messageKey, newMessages: newMessages[messageKey] 
+        });
+        return newMessages;
+      });
 
       // Fetch all subsections
       await fetchSubsections(documentId);
       
+      // CRUCIAL STEP: Explicitly select this subsection to ensure it's activated in the backend
+      // This is needed so the UI can display the conversation properly and avoid duplicate initialization
+      debugConversation('startNewConversation - EXPLICITLY SELECTING SUBSECTION', {
+        documentId, section: returnedSection, subsection: returnedSubsection
+      });
+      
+      try {
+        const selectResult = await selectSubsection(documentId, returnedSection, returnedSubsection);
+        debugConversation('startNewConversation - SUBSECTION SELECTION RESULT', {
+          documentId, section: returnedSection, subsection: returnedSubsection, selectResult
+        });
+      } catch (selectError) {
+        // Log but don't fail the whole operation if selection fails
+        console.error('Failed to select subsection after starting conversation:', selectError);
+        debugConversation('startNewConversation - SUBSECTION SELECTION ERROR', {
+          documentId, section: returnedSection, subsection: returnedSubsection, error: selectError.message
+        });
+      }
+      
+      debugConversation('startNewConversation - EXIT SUCCESS', { 
+        documentId, returnedSection, returnedSubsection 
+      });
+      
       return { 
         success: true, 
         hasPdf: false,
-        section,
-        subsection,
-        message
+        section: returnedSection,
+        subsection: returnedSubsection,
+        message: welcomeMessage
       }
     } catch (error) {
-      console.error('Failed to start conversation:', error)
+      console.error('Failed to start conversation:', error);
+      debugConversation('startNewConversation - EXIT ERROR', { documentId, error: error.message });
       
       return {
         success: false,
@@ -317,6 +471,7 @@ export const useConversation = () => {
 
   // Start a conversation for a specific subsection
   const startSubsectionConversation = async (documentId, section, subsection) => {
+    debugConversation('startSubsectionConversation - ENTRY', { documentId, section, subsection });
     console.log('%c Starting subsection conversation:', 'background: #34d399; color: #000', { 
       documentId, 
       section, 
@@ -339,8 +494,25 @@ export const useConversation = () => {
       return { success: false, error: 'Missing subsection' };
     }
     
-    // Log the exact request we're about to send
+    // Clear any existing messages for this specific subsection to avoid duplication
+    const messageKey = `${documentId}/${section}/${subsection}`;
+    setMessages(prev => {
+      const newMessages = { ...prev };
+      if (newMessages[messageKey]) {
+        delete newMessages[messageKey];
+        debugConversation('startSubsectionConversation - CLEARED EXISTING MESSAGES', { 
+          documentId, section, subsection, messageKey 
+        });
+      }
+      return newMessages;
+    });
+    
+    // Use the subsection/start endpoint for starting conversations for specific subsections
     const requestBody = { section, subsection };
+    debugConversation('startSubsectionConversation - API CALL', {
+      documentId, section, subsection,
+      url: `${API_BASE_URL}/conversation/${documentId}/subsection/start`
+    });
     console.log('%c Request body for subsection/start:', 'background: #3b82f6; color: #fff', JSON.stringify(requestBody, null, 2));
     console.log('API URL:', `${API_BASE_URL}/conversation/${documentId}/subsection/start`);
     
@@ -351,6 +523,7 @@ export const useConversation = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader()
         },
         body: JSON.stringify(requestBody),
       });
@@ -387,18 +560,25 @@ export const useConversation = () => {
         throw new Error('Invalid response format from server');
       }
       
+      debugConversation('startSubsectionConversation - API RESPONSE', { documentId, responseData: data });
       console.log('%c Subsection conversation started successfully:', 'background: #34d399; color: #000', data);
+      
+      // Extract section, subsection and message from the response
+      // Use the returned values from the API if available, otherwise fallback to the provided values
+      const returnedSection = data.section || section;
+      const returnedSubsection = data.subsection || subsection;
+      const welcomeMessage = data.message || 'Conversation started';
       
       // Set the active subsection
       setActiveSubsection(prev => ({
         ...prev,
-        [documentId]: { section, subsection }
+        [documentId]: { section: returnedSection, subsection: returnedSubsection }
       }));
       
       // Update subsection status
       setSubsectionStatus(prev => {
         const docStatus = prev[documentId] || {};
-        const key = `${section}/${subsection}`;
+        const key = `${returnedSection}/${returnedSubsection}`;
         
         return {
           ...prev,
@@ -407,32 +587,67 @@ export const useConversation = () => {
             [key]: {
               hasConversation: true,
               hasMessages: true,
-              section,
-              subsection
+              section: returnedSection,
+              subsection: returnedSubsection
             }
           }
         };
       });
       
       // Store the initial message
-      const messageKey = `${documentId}/${section}/${subsection}`;
-      setMessages(prev => ({
-        ...prev,
-        [messageKey]: [{
-          role: 'assistant',
-          content: data.message || 'Willkommen zum Abschnitt!',
-          timestamp: new Date().toISOString()
-        }]
-      }));
+      const updatedMessageKey = `${documentId}/${returnedSection}/${returnedSubsection}`;
+      debugConversation('startSubsectionConversation - STORING MESSAGE', {
+        documentId, messageKey: updatedMessageKey, message: welcomeMessage, returnedSection, returnedSubsection
+      });
+      
+      setMessages(prev => {
+        const newMessages = {
+          ...prev,
+          [updatedMessageKey]: [{
+            id: `subsection-initial-${Date.now()}`,
+            role: 'assistant',
+            content: welcomeMessage,
+            timestamp: new Date().toISOString(),
+            source: 'startSubsectionConversation'
+          }]
+        };
+        debugConversation('setMessages - IN startSubsectionConversation', { 
+          documentId, messageKey: updatedMessageKey, newMessages: newMessages[updatedMessageKey] 
+        });
+        return newMessages;
+      });
+      
+      // CRUCIAL STEP: Explicitly select this subsection to ensure it's properly activated
+      debugConversation('startSubsectionConversation - EXPLICITLY SELECTING SUBSECTION', {
+        documentId, section: returnedSection, subsection: returnedSubsection
+      });
+      
+      try {
+        const selectResult = await selectSubsection(documentId, returnedSection, returnedSubsection);
+        debugConversation('startSubsectionConversation - SUBSECTION SELECTION RESULT', {
+          documentId, section: returnedSection, subsection: returnedSubsection, selectResult
+        });
+      } catch (selectError) {
+        // Log but don't fail the whole operation if selection fails
+        console.error('Failed to select subsection after starting conversation:', selectError);
+        debugConversation('startSubsectionConversation - SUBSECTION SELECTION ERROR', {
+          documentId, section: returnedSection, subsection: returnedSubsection, error: selectError.message
+        });
+      }
+      
+      debugConversation('startSubsectionConversation - EXIT SUCCESS', {
+        documentId, returnedSection, returnedSubsection, message: welcomeMessage
+      });
       
       return {
         success: true,
-        section,
-        subsection,
-        message: data.message
+        section: returnedSection,
+        subsection: returnedSubsection,
+        message: welcomeMessage
       };
     } catch (error) {
       console.error('%c Failed to start subsection conversation:', 'background: #ef4444; color: #fff', error);
+      debugConversation('startSubsectionConversation - EXIT ERROR', { documentId, section, subsection, error: error.message });
       return {
         success: false,
         error: error.message
@@ -444,6 +659,7 @@ export const useConversation = () => {
 
   // Select a subsection to view/start conversation
   const selectSubsection = async (documentId, section, subsection) => {
+    debugConversation('selectSubsection - ENTRY', { documentId, section, subsection });
     console.log('%c Selecting subsection:', 'background: #34d399; color: #000', { 
       documentId, 
       section, 
@@ -452,11 +668,13 @@ export const useConversation = () => {
     
     if (!documentId || !section || !subsection) {
       console.error('Missing required parameters for selectSubsection:', { documentId, section, subsection });
+      debugConversation('selectSubsection - EXIT EARLY (missing params)', { documentId, section, subsection });
       return { hasConversation: false, hasMessages: false };
     }
     
     // Log the exact request we're about to send
     const requestBody = { section, subsection };
+    debugConversation('selectSubsection - API CALL', { documentId, section, subsection });
     console.log('%c Request body for select-subsection:', 'background: #3b82f6; color: #fff', JSON.stringify(requestBody, null, 2));
     console.log('API URL:', `${API_BASE_URL}/conversation/${documentId}/select-subsection`);
     
@@ -465,6 +683,7 @@ export const useConversation = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader()
         },
         body: JSON.stringify(requestBody),
       });
@@ -501,6 +720,7 @@ export const useConversation = () => {
         throw new Error('Invalid response format from server');
       }
       
+      debugConversation('selectSubsection - API RESPONSE', { documentId, section, subsection, result });
       console.log('%c Subsection selection result:', 'background: #34d399; color: #000', result);
       
       // Update active subsection
@@ -515,6 +735,10 @@ export const useConversation = () => {
       // Handle different response formats
       const hasMessages = result.has_messages === undefined ? false : !!result.has_messages;
       const threadExists = result.thread_exists === undefined ? false : !!result.thread_exists;
+      
+      debugConversation('selectSubsection - RESPONSE ANALYSIS', { 
+        documentId, section, subsection, hasMessages, threadExists
+      });
       
       // Update subsection status
       setSubsectionStatus(prev => {
@@ -536,8 +760,15 @@ export const useConversation = () => {
       
       // Fetch messages if the thread exists
       if (threadExists) {
+        debugConversation('selectSubsection - FETCHING MESSAGES', { documentId, section, subsection });
         await fetchSubsectionMessages(documentId, section, subsection);
+      } else {
+        debugConversation('selectSubsection - NO THREAD EXISTS', { documentId, section, subsection });
       }
+      
+      debugConversation('selectSubsection - EXIT SUCCESS', { 
+        documentId, section, subsection, hasConversation: threadExists, hasMessages
+      });
       
       return {
         hasConversation: threadExists,
@@ -545,6 +776,7 @@ export const useConversation = () => {
       };
     } catch (error) {
       console.error('%c Failed to select subsection:', 'background: #ef4444; color: #fff', error);
+      debugConversation('selectSubsection - EXIT ERROR', { documentId, section, subsection, error: error.message });
       return { hasConversation: false, hasMessages: false };
     }
   }
@@ -611,6 +843,7 @@ export const useConversation = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader()
         },
         body: JSON.stringify({
           message: message
@@ -656,7 +889,11 @@ export const useConversation = () => {
     if (!documentId) return
 
     try {
-      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`)
+      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`, {
+        headers: {
+          ...getAuthHeader()
+        }
+      })
       if (!response.ok) {
         throw new Error(`Failed to download PDF: ${response.status} ${response.statusText}`)
       }
@@ -675,12 +912,18 @@ export const useConversation = () => {
   }
 
   const loadExistingProject = async (projectId, documentId) => {
+    debugConversation('loadExistingProject - ENTRY', { projectId, documentId });
     console.log('Loading existing project with ID:', projectId);
     setIsStartingConversation(true)
     
     try {
       // Fetch project details including conversation history and PDF status
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}`)
+      debugConversation('loadExistingProject - FETCH PROJECT', { projectId, documentId });
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+        headers: {
+          ...getAuthHeader()
+        }
+      })
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Failed to load project:', {
@@ -692,31 +935,184 @@ export const useConversation = () => {
       }
       
       const projectData = await response.json()
+      debugConversation('loadExistingProject - PROJECT DATA', { projectId, documentId, projectData });
       console.log('Project loaded successfully:', projectData);
       
       // Fetch all subsections and their status
+      debugConversation('loadExistingProject - FETCHING SUBSECTIONS', { documentId });
       const subsections = await fetchSubsections(documentId);
       
       // Fetch all approved subsections for this document
+      debugConversation('loadExistingProject - FETCHING APPROVED SUBSECTIONS', { documentId });
       const approved = await fetchApprovedSubsections(documentId);
       console.log('Fetched approved subsections:', approved);
       
       // Fetch PDF for this project if it has a PDF
       if (projectData.has_pdf) {
+        debugConversation('loadExistingProject - FETCHING PDF', { documentId });
         console.log('Project has PDF, fetching preview');
         await fetchPdfPreview(documentId)
       } else {
         console.log('Project does not have a PDF yet');
       }
       
+      // Check if there's an existing active conversation in any subsection
+      let hasExistingActiveConversation = false;
+      let firstConversationSection = null;
+      let firstConversationSubsection = null;
+      
+      if (subsections) {
+        // Look through all subsections to find any with an active conversation
+        const subsectionEntries = Object.entries(subsections);
+        debugConversation('loadExistingProject - CHECKING FOR EXISTING CONVERSATIONS', { 
+          documentId, subsectionCount: subsectionEntries.length 
+        });
+        
+        for (const [key, status] of subsectionEntries) {
+          if (status.hasConversation) {
+            hasExistingActiveConversation = true;
+            // Store the first one we find for possible use later
+            if (!firstConversationSection) {
+              const [section, subsection] = key.split('/');
+              firstConversationSection = section;
+              firstConversationSubsection = subsection;
+            }
+            console.log(`Found existing conversation in subsection: ${key}`);
+          }
+        }
+      }
+      
+      // Determine which section/subsection to activate
+      let sectionToUse = null;
+      let subsectionToUse = null;
+      let needToStartNewConversation = false;
+      
+      // If there's no active conversation yet, check if we need to start one
+      let currentActiveConv = getActiveSubsection(documentId);
+      debugConversation('loadExistingProject - CHECKING ACTIVE CONVERSATION', { 
+        documentId, 
+        hasActiveConv: !!currentActiveConv, 
+        currentActiveConv,
+        hasExistingActiveConversation,
+        firstConversationSection,
+        firstConversationSubsection
+      });
+      
+      if (currentActiveConv && currentActiveConv.section && currentActiveConv.subsection) {
+        // We already have an active subsection set (perhaps from a previous operation)
+        sectionToUse = currentActiveConv.section;
+        subsectionToUse = currentActiveConv.subsection;
+        debugConversation('loadExistingProject - USING EXISTING ACTIVE SUBSECTION', { 
+          documentId, section: sectionToUse, subsection: subsectionToUse 
+        });
+      } else if (hasExistingActiveConversation && firstConversationSection && firstConversationSubsection) {
+        // No active subsection set, but we found existing conversations - use the first one
+        sectionToUse = firstConversationSection;
+        subsectionToUse = firstConversationSubsection;
+        debugConversation('loadExistingProject - USING FIRST EXISTING CONVERSATION', { 
+          documentId, section: sectionToUse, subsection: subsectionToUse 
+        });
+      } else if (!hasExistingActiveConversation && projectData.topic) {
+        // No active subsection and no existing conversations - need to start a new one
+        // Find first section and subsection from the document structure
+        const topicStructure = documentStructure[projectData.topic];
+        if (topicStructure && topicStructure.sections && topicStructure.sections.length > 0) {
+          const firstSection = topicStructure.sections[0];
+          
+          if (firstSection.subsections && firstSection.subsections.length > 0) {
+            const firstSubsection = firstSection.subsections[0];
+            
+            sectionToUse = firstSection.key;
+            subsectionToUse = firstSubsection.key;
+            needToStartNewConversation = true;
+            
+            debugConversation('loadExistingProject - NEED TO START NEW CONVERSATION', {
+              documentId, topic: projectData.topic, section: sectionToUse, subsection: subsectionToUse
+            });
+          }
+        }
+      }
+      
+      // If we've determined which section/subsection to use, proceed with activation
+      if (sectionToUse && subsectionToUse) {
+        if (needToStartNewConversation) {
+          // Start new conversation for initial project setup
+          console.log('No active conversations found, starting initial project conversation:', {
+            topic: projectData.topic,
+            section: sectionToUse,
+            subsection: subsectionToUse
+          });
+          
+          // For initial project setup, we use startNewConversation with the /conversation/{document_id}/start endpoint
+          const startResult = await startNewConversation(
+            projectData.topic, 
+            documentId, 
+            sectionToUse, 
+            subsectionToUse
+          );
+          
+          debugConversation('loadExistingProject - CONVERSATION STARTED', { 
+            documentId, startResult 
+          });
+          
+          // The result contains the actual section/subsection that was used (which might differ from what we requested)
+          if (startResult.success) {
+            sectionToUse = startResult.section;
+            subsectionToUse = startResult.subsection;
+          }
+        } else {
+          // Select the existing conversation
+          console.log('Selecting existing conversation:', {
+            documentId,
+            section: sectionToUse,
+            subsection: subsectionToUse
+          });
+          
+          const selectResult = await selectSubsection(documentId, sectionToUse, subsectionToUse);
+          
+          debugConversation('loadExistingProject - SUBSECTION SELECTED', { 
+            documentId, sectionToUse, subsectionToUse, selectResult 
+          });
+          
+          // Ensure we have messages for this subsection
+          if (selectResult.hasConversation) {
+            const messages = getCurrentMessages(documentId, sectionToUse, subsectionToUse);
+            
+            if (messages.length === 0) {
+              // If we don't have messages yet, fetch them
+              console.log('No messages found locally for selected subsection, fetching them:', {
+                documentId, section: sectionToUse, subsection: subsectionToUse
+              });
+              
+              await fetchSubsectionMessages(documentId, sectionToUse, subsectionToUse);
+            }
+          }
+        }
+        
+        // Always update the active subsection in the state
+        setActiveSubsection(prev => ({
+          ...prev,
+          [documentId]: { section: sectionToUse, subsection: subsectionToUse }
+        }));
+      }
+      
+      debugConversation('loadExistingProject - EXIT SUCCESS', { 
+        documentId, projectId, hasPdf: projectData.has_pdf,
+        activatedSection: sectionToUse,
+        activatedSubsection: subsectionToUse
+      });
+      
       return {
         hasPdf: projectData.has_pdf,
         sectionData: projectData.section_data || {},
         subsections,
-        approvedSubsections: approved
+        approvedSubsections: approved,
+        activeSection: sectionToUse,
+        activeSubsection: subsectionToUse
       }
     } catch (error) {
       console.error('Failed to load project:', error)
+      debugConversation('loadExistingProject - EXIT ERROR', { projectId, documentId, error: error.message });
       return {
         hasPdf: false,
         sectionData: {},
@@ -774,7 +1170,11 @@ export const useConversation = () => {
       const url = `${API_BASE_URL}/documents/${documentId}/approved`;
       console.log('Approved subsections API URL:', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          ...getAuthHeader()
+        }
+      });
       
       const responseText = await response.text();
       
@@ -850,6 +1250,7 @@ export const useConversation = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader()
         },
         body: JSON.stringify({
           section,

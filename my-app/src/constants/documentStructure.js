@@ -1,7 +1,7 @@
 export const API_BASE_URL = 'http://localhost:8000'
 
 // Log the API base URL on application init
-console.log('API Base URL:', API_BASE_URL)
+console.log('Using API Base URL:', API_BASE_URL)
 
 export const ALLOWED_FILE_TYPES = [
   'application/pdf',
