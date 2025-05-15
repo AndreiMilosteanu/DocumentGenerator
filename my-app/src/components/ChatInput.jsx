@@ -1,5 +1,5 @@
 import React from 'react'
-import { Send, Paperclip, Upload, XCircle } from 'lucide-react'
+import { Send, Paperclip, Upload, XCircle, Check, Loader } from 'lucide-react'
 
 export const ChatInput = ({
   inputMessage,
@@ -17,14 +17,28 @@ export const ChatInput = ({
   onDrop,
   fileInputRef,
   inputRef,
+  onApproveData,
+  isApprovingData,
+  isSubsectionApproved,
 }) => {
+  // Determine button state for rendering
+  const isButtonDisabled = isApprovingData || isLoading || isSubsectionApproved;
+  
+  // Get approve button style based on approval state
+  const getApproveButtonStyle = () => {
+    if (isSubsectionApproved) {
+      return 'bg-green-500 text-white';
+    }
+    return 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50';
+  };
+
   return (
     <div className="border-t px-4 py-4">
       <div className="max-w-3xl mx-auto">
         <form 
           onSubmit={onSubmit} 
           onDragEnter={onDragEnter}
-          className={`relative flex items-center space-x-4 ${
+          className={`relative flex items-center space-x-2 ${
             dragActive ? 'opacity-50' : ''
           }`}
         >
@@ -52,6 +66,24 @@ export const ChatInput = ({
             className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={!hasActiveConversation}
           />
+          
+          {/* Approve button - placed before the send button */}
+          {hasActiveConversation && (
+            <button
+              type="button" 
+              onClick={onApproveData}
+              disabled={isButtonDisabled}
+              className={`p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 flex items-center justify-center ${getApproveButtonStyle()} disabled:cursor-not-allowed`}
+              title={isSubsectionApproved ? "Daten sind bereits gespeichert" : "Daten in PDF übernehmen"}
+            >
+              {isApprovingData ? (
+                <Loader className="w-5 h-5 animate-spin" />
+              ) : (
+                <Check className="w-5 h-5" />
+              )}
+            </button>
+          )}
+          
           <button
             type="submit"
             disabled={!inputMessage.trim() || isLoading || !hasActiveConversation}

@@ -6,9 +6,11 @@ export const useConversation = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isStartingConversation, setIsStartingConversation] = useState(false)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const [isApprovingData, setIsApprovingData] = useState(false)
   const [pdfUrls, setPdfUrls] = useState({})
   const [activeSubsection, setActiveSubsection] = useState({}) // Track active subsection for each document
   const [subsectionStatus, setSubsectionStatus] = useState({}) // Track subsections with active conversations
+  const [approvedSubsections, setApprovedSubsections] = useState({}) // Track subsections that have been approved
 
   const fetchPdfPreview = async (documentId) => {
     console.log('Fetching PDF preview for document:', documentId);
@@ -290,9 +292,6 @@ export const useConversation = () => {
         }]
       }));
 
-      // Fetch PDF preview
-      await fetchPdfPreview(documentId)
-      
       // Fetch all subsections
       await fetchSubsections(documentId);
       
@@ -563,6 +562,7 @@ export const useConversation = () => {
     
     const { section, subsection } = active;
     const messageKey = `${documentId}/${section}/${subsection}`;
+    const subsectionKey = `${section}/${subsection}`;
 
     const userMessage = { role: 'user', content: message }
     
@@ -571,6 +571,38 @@ export const useConversation = () => {
       ...prev,
       [messageKey]: [...(prev[messageKey] || []), userMessage]
     }))
+    
+    // Reset approval status for this subsection when sending a new message
+    setSubsectionStatus(prev => {
+      const docStatus = prev[documentId] || {};
+      
+      return {
+        ...prev,
+        [documentId]: {
+          ...docStatus,
+          [subsectionKey]: {
+            ...docStatus[subsectionKey],
+            isApproved: false,
+            approvedAt: null
+          }
+        }
+      };
+    });
+    
+    // Also clear from approvedSubsections
+    setApprovedSubsections(prev => {
+      const docApproved = {...(prev[documentId] || {})};
+      
+      // Remove this subsection's approval
+      if (docApproved[subsectionKey]) {
+        delete docApproved[subsectionKey];
+      }
+      
+      return {
+        ...prev,
+        [documentId]: docApproved
+      };
+    });
     
     setIsLoading(true)
 
@@ -606,9 +638,6 @@ export const useConversation = () => {
           timestamp: new Date().toISOString()
         }]
       }))
-
-      // Fetch updated PDF
-      await fetchPdfPreview(documentId)
     } catch (error) {
       console.error('Failed to send message:', error)
       setMessages(prev => ({
@@ -668,6 +697,10 @@ export const useConversation = () => {
       // Fetch all subsections and their status
       const subsections = await fetchSubsections(documentId);
       
+      // Fetch all approved subsections for this document
+      const approved = await fetchApprovedSubsections(documentId);
+      console.log('Fetched approved subsections:', approved);
+      
       // Fetch PDF for this project if it has a PDF
       if (projectData.has_pdf) {
         console.log('Project has PDF, fetching preview');
@@ -679,14 +712,16 @@ export const useConversation = () => {
       return {
         hasPdf: projectData.has_pdf,
         sectionData: projectData.section_data || {},
-        subsections
+        subsections,
+        approvedSubsections: approved
       }
     } catch (error) {
       console.error('Failed to load project:', error)
       return {
         hasPdf: false,
         sectionData: {},
-        subsections: {}
+        subsections: {},
+        approvedSubsections: {}
       }
     } finally {
       setIsStartingConversation(false)
@@ -726,20 +761,215 @@ export const useConversation = () => {
     };
   }
 
+  // Fetch all approved subsections for a document
+  const fetchApprovedSubsections = async (documentId) => {
+    console.log('%c Fetching approved subsections:', 'background: #34d399; color: #000', { documentId });
+    
+    if (!documentId) {
+      console.error('Missing documentId for fetchApprovedSubsections');
+      return {};
+    }
+    
+    try {
+      const url = `${API_BASE_URL}/documents/${documentId}/approved`;
+      console.log('Approved subsections API URL:', url);
+      
+      const response = await fetch(url);
+      
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        console.error('%c Failed to fetch approved subsections:', 'background: #ef4444; color: #fff', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText,
+          url
+        });
+        throw new Error(`Failed to fetch approved subsections: ${response.status}`);
+      }
+      
+      // Try to parse the response
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (error) {
+        console.error('Failed to parse response JSON:', error);
+        throw new Error('Invalid response format from server');
+      }
+      
+      console.log('%c Approved subsections:', 'background: #34d399; color: #000', data);
+      
+      // Map approved subsections to a more usable format
+      const approvedMap = {};
+      
+      if (Array.isArray(data)) {
+        data.forEach(item => {
+          const key = `${item.section}/${item.subsection}`;
+          approvedMap[key] = {
+            value: item.value,
+            approvedAt: item.approved_at
+          };
+        });
+      }
+      
+      // Update approved subsections state
+      setApprovedSubsections(prev => ({
+        ...prev,
+        [documentId]: approvedMap
+      }));
+      
+      return approvedMap;
+    } catch (error) {
+      console.error('Failed to fetch approved subsections:', error);
+      return {};
+    }
+  }
+  
+  // Approve data for a subsection
+  const approveSubsectionData = async (documentId, section, subsection) => {
+    console.log('%c Approving subsection data:', 'background: #34d399; color: #000', { 
+      documentId, 
+      section, 
+      subsection 
+    });
+    
+    if (!documentId || !section || !subsection) {
+      console.error('Missing required parameters for approveSubsectionData:', { documentId, section, subsection });
+      return { success: false, error: 'Missing required parameters' };
+    }
+    
+    setIsApprovingData(true);
+    
+    try {
+      // Using the new approve-simple endpoint
+      const url = `${API_BASE_URL}/documents/${documentId}/approve-simple`;
+      console.log('Approving subsection at URL:', url);
+      console.log('Request body:', { section, subsection });
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          section,
+          subsection
+        }),
+      });
+      
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        console.error('%c Failed to approve subsection data:', 'background: #ef4444; color: #fff', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText,
+          url
+        });
+        throw new Error(`Failed to approve subsection data: ${response.status}`);
+      }
+      
+      // Try to parse the response
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (error) {
+        console.error('Failed to parse response JSON:', error);
+        throw new Error('Invalid response format from server');
+      }
+      
+      console.log('%c Subsection data approved successfully:', 'background: #34d399; color: #000', data);
+      
+      // Update approved subsections state
+      setApprovedSubsections(prev => {
+        const docApproved = prev[documentId] || {};
+        const key = `${section}/${subsection}`;
+        
+        return {
+          ...prev,
+          [documentId]: {
+            ...docApproved,
+            [key]: {
+              approvedAt: new Date().toISOString() // Since approved_at may not be in the response now
+            }
+          }
+        };
+      });
+      
+      // Update subsection status
+      setSubsectionStatus(prev => {
+        const docStatus = prev[documentId] || {};
+        const key = `${section}/${subsection}`;
+        
+        return {
+          ...prev,
+          [documentId]: {
+            ...docStatus,
+            [key]: {
+              ...docStatus[key],
+              isApproved: true,
+              approvedAt: new Date().toISOString() // Since approved_at may not be in the response now
+            }
+          }
+        };
+      });
+      
+      // Fetch the updated PDF
+      await fetchPdfPreview(documentId);
+      
+      return {
+        success: true,
+        approved: data.approved,
+        section: data.section,
+        subsection: data.subsection
+      };
+    } catch (error) {
+      console.error('Failed to approve subsection data:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    } finally {
+      setIsApprovingData(false);
+    }
+  }
+
+  // Check if a subsection is approved
+  const isSubsectionApproved = (documentId, section, subsection) => {
+    if (!documentId || !section || !subsection) return false;
+    
+    const docApproved = approvedSubsections[documentId] || {};
+    const key = `${section}/${subsection}`;
+    
+    return !!docApproved[key];
+  }
+
+  // Get all approved subsections for a document
+  const getApprovedSubsections = (documentId) => {
+    if (!documentId) return {};
+    
+    return approvedSubsections[documentId] || {};
+  }
+
   return {
     messages,
     getCurrentMessages,
     isLoading,
     isStartingConversation,
     isGeneratingPdf,
+    isApprovingData,
     pdfUrls,
     activeSubsection: getActiveSubsection,
     subsectionStatus,
+    approvedSubsections: getApprovedSubsections,
+    isSubsectionApproved,
     startNewConversation,
     startSubsectionConversation,
     selectSubsection,
     fetchSubsections,
     fetchSubsectionMessages,
+    fetchApprovedSubsections,
+    approveSubsectionData,
     sendMessage,
     setMessages,
     downloadPdf,

@@ -27,6 +27,7 @@ export default function App() {
     isLoading,
     isStartingConversation,
     isGeneratingPdf,
+    isApprovingData,
     pdfUrls,
     startNewConversation,
     startSubsectionConversation,
@@ -35,7 +36,9 @@ export default function App() {
     downloadPdf,
     loadExistingProject,
     activeSubsection: getActiveSubsection,
-    subsectionStatus
+    subsectionStatus,
+    isSubsectionApproved,
+    approveSubsectionData
   } = useConversation()
 
   const messagesEndRef = useRef(null)
@@ -147,6 +150,9 @@ export default function App() {
     // Get available subsections
     const availableSubsections = projectDetails.subsections || {};
     console.log('Available subsections:', availableSubsections);
+    
+    // Log approved subsections
+    console.log('Approved subsections for project:', projectDetails.approvedSubsections);
     
     // Get active subsection from conversation hook
     const active = getActiveSubsection(project.documentId);
@@ -466,6 +472,30 @@ export default function App() {
   const currentMessages = activeProject && activeSectionKey && activeSubsectionKey ? 
     getCurrentMessages(activeProject.documentId, activeSectionKey, activeSubsectionKey) : [];
 
+  // Update the handleApproveData function
+  const handleApproveData = async () => {
+    if (!activeProject || !activeSectionKey || !activeSubsectionKey) return;
+    
+    console.log('Approving data for subsection:', {
+      documentId: activeProject.documentId,
+      section: activeSectionKey,
+      subsection: activeSubsectionKey
+    });
+    
+    const result = await approveSubsectionData(
+      activeProject.documentId,
+      activeSectionKey,
+      activeSubsectionKey
+    );
+    
+    if (result.success) {
+      console.log('Data approved successfully:', result);
+    } else {
+      console.error('Failed to approve data:', result.error);
+      alert(`Fehler beim Speichern der Daten: ${result.error}`);
+    }
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <div className="flex flex-1 overflow-hidden">
@@ -536,6 +566,13 @@ export default function App() {
                   onDrop={handleDrop}
                   fileInputRef={fileInputRef}
                   inputRef={inputRef}
+                  onApproveData={handleApproveData}
+                  isApprovingData={isApprovingData}
+                  isSubsectionApproved={
+                    activeProject && activeSectionKey && activeSubsectionKey ? 
+                    isSubsectionApproved(activeProject.documentId, activeSectionKey, activeSubsectionKey) : 
+                    false
+                  }
                 />
               </>
             ) : (

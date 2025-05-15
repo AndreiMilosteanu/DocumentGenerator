@@ -79,12 +79,17 @@ export const Sidebar = ({
     return subsectionStatus[key]?.hasConversation || false;
   }
 
+  // Calculate if a project list should be scrollable (more than 5 projects)
+  const shouldScroll = (projectList) => {
+    return projectList && projectList.length > 5;
+  }
+
   return (
     <aside className="w-72 bg-white border-r p-6 flex flex-col">
       <div className="mb-8">
         <img src="/logo.png" alt="erdbaron" className="h-6" />
       </div>
-      <nav className="flex-1">
+      <nav className="flex-1 overflow-y-auto">
         <div className="mb-4">
           <div 
             className="flex items-center justify-between cursor-pointer p-2 hover:bg-gray-50 rounded-lg"
@@ -153,27 +158,29 @@ export const Sidebar = ({
                       
                       {/* Projects under this topic */}
                       {topicFoldersOpen[topic] && projectsByTopic[topic] && (
-                        <div className="ml-6 mt-1 space-y-1">
+                        <div className="ml-6 mt-1">
                           {projectsByTopic[topic].length === 0 ? (
                             <div className="text-xs text-gray-400 italic py-1">
                               Keine Projekte in dieser Kategorie
                             </div>
                           ) : (
-                            projectsByTopic[topic].map(project => (
-                              <div 
-                                key={project.id}
-                                onClick={() => onProjectSelect(project)}
-                                className={`flex items-center space-x-2 p-1 text-sm cursor-pointer hover:text-blue-600 rounded ${
-                                  project.id === activeChapter ? 'text-blue-600 bg-blue-50' : 'text-gray-600'
-                                }`}
-                              >
-                                <FileText className="w-3 h-3" />
-                                <span>{project.name || `Projekt ${project.id.substring(0, 6)}`}</span>
-                                {project.hasPdf && (
-                                  <span className="w-2 h-2 bg-green-500 rounded-full" title="PDF verfügbar"></span>
-                                )}
-                              </div>
-                            ))
+                            <div className={`${shouldScroll(projectsByTopic[topic]) ? 'max-h-60 overflow-y-auto pr-2 custom-scrollbar' : ''}`}>
+                              {projectsByTopic[topic].map(project => (
+                                <div 
+                                  key={project.id}
+                                  onClick={() => onProjectSelect(project)}
+                                  className={`flex items-center space-x-2 p-1 my-1 text-sm cursor-pointer hover:text-blue-600 rounded ${
+                                    project.id === activeChapter ? 'text-blue-600 bg-blue-50' : 'text-gray-600'
+                                  }`}
+                                >
+                                  <FileText className="w-3 h-3 flex-shrink-0" />
+                                  <span className="truncate">{project.name || `Projekt ${project.id.substring(0, 6)}`}</span>
+                                  {project.hasPdf && (
+                                    <span className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" title="PDF verfügbar"></span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
                       )}
