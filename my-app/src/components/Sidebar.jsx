@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { ChevronRight, ChevronDown, MessageCircle, ChevronLeft, AlertCircle } from 'lucide-react'
 import { documentStructure } from '../constants/documentStructure'
+import { FileList } from './FileList'
 
 export const Sidebar = ({ 
   selectedTopic,
@@ -132,6 +133,9 @@ export const Sidebar = ({
             </div>
           )}
         </nav>
+        
+        {/* File List Component */}
+        {documentId && <FileList documentId={documentId} />}
       </div>
       
       {/* Error message for when we can't find the section in the PDF */}

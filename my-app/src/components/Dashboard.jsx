@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { API_BASE_URL } from '../constants/documentStructure';
+import { API_BASE_URL, documentStructure } from '../constants/documentStructure';
 import { Edit2, Trash2, MoreVertical, X, Check, Loader } from 'lucide-react';
+import { CreateProjectModal } from './CreateProjectModal';
+import { ApiTestButton } from './ApiTestButton';
 
 export const Dashboard = () => {
   const [projects, setProjects] = useState([]);
@@ -14,6 +16,7 @@ export const Dashboard = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [actionFeedback, setActionFeedback] = useState({ message: '', type: '' });
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   const menuRef = useRef(null);
   const editInputRef = useRef(null);
@@ -27,6 +30,55 @@ export const Dashboard = () => {
   });
   
   const navigate = useNavigate();
+  
+  // Define fetchProjects function
+  const fetchProjects = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Use the projects/list endpoint for all users
+      const endpoint = `${API_BASE_URL}/projects/list`;
+      console.log('Fetching projects from endpoint:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to fetch projects:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText: errorText
+        });
+        throw new Error(`Failed to fetch projects: ${response.status} ${response.statusText}`);
+      }
+      
+      const projectsList = await response.json();
+      console.log('Projects fetched successfully:', projectsList);
+      
+      // Map the API response to our expected format
+      const formattedProjects = projectsList.map(project => ({
+        id: project.id,
+        name: project.name,
+        topic: project.topic,
+        documentId: project.document_id,
+        createdAt: project.created_at || new Date().toISOString(),
+        hasPdf: project.has_pdf || false,
+        createdBy: project.created_by || currentUser.id
+      }));
+      
+      setProjects(formattedProjects);
+    } catch (err) {
+      console.error('Failed to fetch projects:', err);
+      setError('Failed to load projects. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // Handle clicks outside of the dropdown menu
   useEffect(() => {
@@ -49,60 +101,98 @@ export const Dashboard = () => {
     }
   }, [editingProject]);
   
+  // Fetch projects on component mount
   useEffect(() => {
-    const fetchProjects = async () => {
+    const loadProjects = async () => {
       try {
-        setIsLoading(true);
-        
-        // Use the projects/list endpoint for all users
-        const endpoint = `${API_BASE_URL}/projects/list`;
-        console.log('Fetching projects from endpoint:', endpoint);
-        
-        const response = await fetch(endpoint, {
-          headers: {
-            ...getAuthHeader(),
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Failed to fetch projects:', {
-            status: response.status,
-            statusText: response.statusText,
-            responseText: errorText
-          });
-          throw new Error(`Failed to fetch projects: ${response.status} ${response.statusText}`);
-        }
-        
-        const projectsList = await response.json();
-        console.log('Projects fetched successfully:', projectsList);
-        
-        // Map the API response to our expected format
-        const formattedProjects = projectsList.map(project => ({
-          id: project.id,
-          name: project.name,
-          topic: project.topic,
-          documentId: project.document_id,
-          createdAt: project.created_at || new Date().toISOString(),
-          hasPdf: project.has_pdf || false,
-          createdBy: project.created_by || currentUser.id
-        }));
-        
-        setProjects(formattedProjects);
-      } catch (err) {
-        console.error('Failed to fetch projects:', err);
-        setError('Failed to load projects. Please try again later.');
-      } finally {
-        setIsLoading(false);
+        await fetchProjects();
+      } catch (error) {
+        console.error('Error loading projects:', error);
       }
     };
     
-    fetchProjects();
+    loadProjects();
+    // Removing fetchProjects from the dependency array to avoid circular dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, getAuthHeader, isAdmin]);
   
   const handleCreateProject = () => {
-    navigate('/new-project');
+    // Open the create project modal instead of navigating
+    setIsCreateModalOpen(true);
+  };
+  
+  const handleCreateProjectSubmit = async (selectedType, projectName) => {
+    try {
+      // Make sure we have valid values for required fields
+      if (!selectedType) {
+        throw new Error('Dokumenttyp ist erforderlich');
+      }
+      
+      // Ensure we have a valid name, using a default if empty
+      const nameToUse = projectName && projectName.trim() 
+        ? projectName.trim() 
+        : `Neues ${selectedType} Projekt`;
+      
+      // Prepare request body with required fields
+      const requestObj = {
+        name: nameToUse,
+        topic: selectedType
+      };
+      
+      console.log('Creating project with data:', requestObj);
+      
+      // Make the API call with the fetch API
+      const response = await fetch(`${API_BASE_URL}/projects/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify(requestObj)
+      });
+      
+      // Get response text for debugging
+      const responseText = await response.text();
+      
+      // Log everything for debugging
+      console.log('Response status:', response.status);
+      console.log('Response text:', responseText);
+      
+      // Handle errors
+      if (!response.ok) {
+        console.error('Project creation failed:', {
+          status: response.status,
+          text: responseText,
+          request: requestObj
+        });
+        throw new Error(`Failed to create project: ${response.status} - ${responseText}`);
+      }
+      
+      // Parse JSON response
+      let projectData;
+      try {
+        projectData = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse response:', e);
+        throw new Error('Invalid response from server');
+      }
+      
+      console.log('Project created:', projectData);
+      
+      // Refresh the projects list
+      await fetchProjects();
+      
+      // Navigate to the new project
+      navigate(`/project/${projectData.id}`);
+    } catch (err) {
+      console.error('Project creation error:', err);
+      setActionFeedback({
+        message: `Fehler beim Erstellen des Projekts: ${err.message}`,
+        type: 'error'
+      });
+      setTimeout(() => setActionFeedback({ message: '', type: '' }), 5000);
+      throw err; // Rethrow to let the modal handle it
+    }
   };
   
   const handleProjectSelect = (project) => {
@@ -279,6 +369,9 @@ export const Dashboard = () => {
       </header>
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Development tool for API testing */}
+        {import.meta.env.DEV && <ApiTestButton />}
+        
         {actionFeedback.message && (
           <div 
             className={`mb-4 px-4 py-2 rounded-md ${
@@ -414,6 +507,15 @@ export const Dashboard = () => {
           </div>
         )}
       </main>
+      
+      {/* Create Project Modal */}
+      {isCreateModalOpen && (
+        <CreateProjectModal
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreateProject={handleCreateProjectSubmit}
+          documentTypes={Object.keys(documentStructure)}
+        />
+      )}
     </div>
   );
 }; 

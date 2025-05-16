@@ -5,16 +5,41 @@ export const CreateProjectModal = ({ onClose, onCreateProject, documentTypes }) 
   const [selectedType, setSelectedType] = useState(documentTypes[0] || '')
   const [projectName, setProjectName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-
+  const [error, setError] = useState('')
+  
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError('')
     
     try {
-      await onCreateProject(selectedType, projectName.trim() || undefined)
+      // Validate input - ensure we have a valid document type
+      if (!selectedType) {
+        setError('Bitte wählen Sie einen Dokumenttyp.')
+        setIsSubmitting(false)
+        return
+      }
+      
+      // Use a default name if none is provided
+      const nameToUse = projectName.trim() || `Neues ${selectedType} Projekt`
+      
+      // Create project data object for better debugging
+      const projectData = {
+        name: nameToUse,
+        topic: selectedType
+      }
+      
+      console.log('Project data to send:', projectData)
+      
+      // Create project with the prepared data
+      await onCreateProject(selectedType, nameToUse)
+      
+      // Only close the modal on success
+      onClose()
     } catch (error) {
       console.error('Error creating project:', error)
-      // Error is already handled in the parent component
+      setError(`Fehler beim Erstellen des Projekts: ${error.message}`)
+      // Don't close the modal on error
     } finally {
       setIsSubmitting(false)
     }
@@ -66,6 +91,12 @@ export const CreateProjectModal = ({ onClose, onCreateProject, documentTypes }) 
             />
           </div>
           
+          {error && (
+            <div className="text-sm text-red-500">
+              {error}
+            </div>
+          )}
+          
           <div className="flex justify-end space-x-3 mt-6">
             <button
               type="button"
@@ -90,12 +121,6 @@ export const CreateProjectModal = ({ onClose, onCreateProject, documentTypes }) 
               )}
             </button>
           </div>
-          
-          {isSubmitting && (
-            <div className="text-sm text-blue-600 flex items-center justify-center pt-4">
-              <p>Projekt wird erstellt und Konversation wird gestartet...</p>
-            </div>
-          )}
         </form>
       </div>
     </div>

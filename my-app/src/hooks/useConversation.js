@@ -301,9 +301,16 @@ export const useConversation = () => {
         throw new Error('Missing required parameters for starting conversation');
       }
       
+      const requestBody = {
+        topic: topicName,
+        section: section,
+        subsection: subsection
+      };
+      
       debugConversation('startNewConversation - API CALL', {
         documentId, topicName, section, subsection,
-        url: `${API_BASE_URL}/conversation/${documentId}/start`
+        url: `${API_BASE_URL}/conversation/${documentId}/start`,
+        requestBody
       });
       
       console.log('Making API request to start initial conversation:', {
@@ -312,6 +319,7 @@ export const useConversation = () => {
         section: section,
         subsection: subsection,
         url: `${API_BASE_URL}/conversation/${documentId}/start`,
+        requestBody: JSON.stringify(requestBody)
       })
 
       const response = await fetch(`${API_BASE_URL}/conversation/${documentId}/start`, {
@@ -320,11 +328,7 @@ export const useConversation = () => {
           'Content-Type': 'application/json',
           ...getAuthHeader()
         },
-        body: JSON.stringify({
-          topic: topicName,
-          section: section,
-          subsection: subsection
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       const responseText = await response.text();
@@ -337,7 +341,8 @@ export const useConversation = () => {
           documentId: documentId,
           topic: topicName,
           section: section,
-          subsection: subsection
+          subsection: subsection,
+          requestBody
         })
         throw new Error(`Failed to start conversation: ${response.status} ${response.statusText} - ${responseText}`)
       }
@@ -674,7 +679,14 @@ export const useConversation = () => {
     
     // Log the exact request we're about to send
     const requestBody = { section, subsection };
-    debugConversation('selectSubsection - API CALL', { documentId, section, subsection });
+    debugConversation('selectSubsection - API CALL', { 
+      documentId, 
+      section, 
+      subsection,
+      url: `${API_BASE_URL}/conversation/${documentId}/select-subsection`,
+      requestBody: JSON.stringify(requestBody)
+    });
+    
     console.log('%c Request body for select-subsection:', 'background: #3b82f6; color: #fff', JSON.stringify(requestBody, null, 2));
     console.log('API URL:', `${API_BASE_URL}/conversation/${documentId}/select-subsection`);
     

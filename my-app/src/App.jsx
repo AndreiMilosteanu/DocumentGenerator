@@ -6,7 +6,6 @@ import { Register } from './components/auth/Register';
 import { Dashboard } from './components/Dashboard';
 import { PrivateRoute } from './components/auth/PrivateRoute';
 import ProjectView from './components/ProjectView';
-import { CreateProjectForm } from './components/CreateProjectForm';
 
 const App = () => {
   return (
@@ -21,7 +20,6 @@ const App = () => {
           {/* Protected routes */}
           <Route element={<PrivateRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/new-project" element={<CreateProjectForm />} />
             <Route path="/project/:id" element={<ProjectView />} />
           </Route>
           

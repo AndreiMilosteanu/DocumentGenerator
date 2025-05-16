@@ -6,6 +6,7 @@ import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { PdfPreview } from './PdfPreview';
 import { useConversation } from '../hooks/useConversation';
+import { useFileUpload } from '../hooks/useFileUpload';
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE, documentStructure, API_BASE_URL } from '../constants/documentStructure';
 
 const ProjectView = () => {
@@ -44,6 +45,12 @@ const ProjectView = () => {
     startSubsectionConversation,
     fetchSubsectionMessages
   } = useConversation();
+
+  const {
+    isUploading,
+    uploadFileWithMessage,
+    resetCache: resetFileCache
+  } = useFileUpload();
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -317,10 +324,37 @@ const ProjectView = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputMessage.trim() || !activeProject) return;
+    if ((!inputMessage.trim() && !selectedFile) || !activeProject) return;
     
-    await sendMessage(inputMessage, activeProject.documentId);
-    setInputMessage('');
+    try {
+      if (selectedFile) {
+        // If we have a file, use the uploadFileWithMessage endpoint
+        console.log('Sending message with file:', {
+          documentId: activeProject.documentId,
+          fileName: selectedFile.name,
+          hasMessage: !!inputMessage.trim()
+        });
+        
+        await uploadFileWithMessage(
+          activeProject.documentId,
+          selectedFile,
+          inputMessage
+        );
+        
+        // Clear file after successful upload
+        setSelectedFile(null);
+      } else {
+        // If no file, use the regular message sending
+        await sendMessage(inputMessage, activeProject.documentId);
+      }
+      
+      // Clear message input in either case
+      setInputMessage('');
+      setFileError('');
+    } catch (error) {
+      console.error('Error sending message or file:', error);
+      setFileError('Fehler beim Senden der Nachricht oder Datei. Bitte versuchen Sie es erneut.');
+    }
   };
 
   const validateFile = (file) => {
@@ -401,6 +435,13 @@ const ProjectView = () => {
     navigate('/dashboard');
   };
 
+  // When project ID changes, reset file cache to ensure fresh data
+  useEffect(() => {
+    if (projectId) {
+      resetFileCache();
+    }
+  }, [projectId, resetFileCache]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -478,6 +519,7 @@ const ProjectView = () => {
             inputRef={inputRef}
             onApproveData={handleApproveData}
             isApprovingData={isApprovingData}
+            isUploading={isUploading}
             isSubsectionApproved={
               activeProject && activeSectionKey && activeSubsectionKey ? 
               isSubsectionApproved(activeProject.documentId, activeSectionKey, activeSubsectionKey) : 

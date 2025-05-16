@@ -16,27 +16,22 @@ export const documentStructure = {
     icon: '📄',
     sections: [
       {
-        key: 'Projekt Details',
-        title: 'Projekt Details',
+        key: 'Deckblatt',
+        title: 'Deckblatt',
         subsections: [
-          { key: 'Standort', title: 'Standort' },
-          { key: 'Auftraggeber', title: 'Auftraggeber' }
+          { key: 'Projekt', title: 'Projekt' },
+          { key: 'Auftraggeber', title: 'Auftraggeber' },
+          { key: 'Dienstleistungsnummer', title: 'Dienstleistungsnummer' },
+          { key: 'Probenahmedatum', title: 'Probenahmedatum' }
         ]
       },
       {
-        key: 'Projekt Objectives',
-        title: 'Projekt Objectives',
+        key: 'Stellungnahme',
+        title: 'Stellungnahme',
         subsections: [
-          { key: 'Ziele', title: 'Ziele' },
-          { key: 'Anforderungen', title: 'Anforderungen' }
-        ]
-      },
-      {
-        key: 'Anhänge',
-        title: 'Anhänge',
-        subsections: [
-          { key: 'Dokumente', title: 'Dokumente' },
-          { key: 'Bilder', title: 'Bilder' }
+          { key: 'Probenahmeprotokoll', title: 'Probenahmeprotokoll' },
+          { key: 'Laborberichte', title: 'Laborberichte' },
+          { key: 'Auswertung', title: 'Auswertung' }
         ]
       }
     ]

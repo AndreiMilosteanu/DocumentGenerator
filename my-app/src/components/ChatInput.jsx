@@ -20,9 +20,10 @@ export const ChatInput = ({
   onApproveData,
   isApprovingData,
   isSubsectionApproved,
+  isUploading
 }) => {
   // Determine button state for rendering
-  const isButtonDisabled = isApprovingData || isLoading || isSubsectionApproved;
+  const isButtonDisabled = isApprovingData || isLoading || isSubsectionApproved || isUploading;
   
   // Get approve button style based on approval state
   const getApproveButtonStyle = () => {
@@ -52,10 +53,15 @@ export const ChatInput = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 disabled:opacity-50"
             title="PDF oder DOCX anhängen (max. 10 MB)"
+            disabled={!hasActiveConversation || isUploading}
           >
-            <Paperclip className="w-5 h-5" />
+            {isUploading ? (
+              <Loader className="w-5 h-5 animate-spin" />
+            ) : (
+              <Paperclip className="w-5 h-5" />
+            )}
           </button>
           <input
             ref={inputRef}
@@ -64,7 +70,7 @@ export const ChatInput = ({
             onChange={onInputChange}
             placeholder="Schreiben Sie Ihre Antwort..."
             className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={!hasActiveConversation}
+            disabled={!hasActiveConversation || isUploading}
           />
           
           {/* Approve button - placed before the send button */}
@@ -86,10 +92,14 @@ export const ChatInput = ({
           
           <button
             type="submit"
-            disabled={!inputMessage.trim() || isLoading || !hasActiveConversation}
+            disabled={(!inputMessage.trim() && !selectedFile) || isLoading || !hasActiveConversation || isUploading}
             className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="w-5 h-5" />
+            {isLoading || isUploading ? (
+              <Loader className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
           </button>
 
           {dragActive && (
@@ -121,6 +131,7 @@ export const ChatInput = ({
               <button
                 onClick={onFileRemove}
                 className="text-gray-400 hover:text-gray-600"
+                disabled={isUploading}
               >
                 <XCircle className="w-4 h-4" />
               </button>
