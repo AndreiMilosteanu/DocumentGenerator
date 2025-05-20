@@ -172,8 +172,8 @@ export const useFileUpload = () => {
       const data = await response.json();
       console.log('Files fetched successfully:', data);
       
-      // Ensure data is always an array
-      const fileArray = Array.isArray(data) ? data : [];
+      // Extract files array from response
+      const fileArray = Array.isArray(data.files) ? data.files : [];
       setFiles(fileArray);
       
       // Mark this document as loaded

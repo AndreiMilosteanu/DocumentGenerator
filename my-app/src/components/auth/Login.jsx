@@ -75,8 +75,9 @@ export const Login = () => {
       
       console.log('Redirecting to dashboard...');
       
-      // Force reload to ensure the context is updated with the new auth state
-      window.location.href = '/dashboard';
+      // Use the correct base URL for redirects
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+      window.location.href = `${baseUrl}/dashboard`;
     } catch (err) {
       console.error('Login error:', err);
       setError(`${err.message}`);

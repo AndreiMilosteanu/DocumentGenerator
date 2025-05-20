@@ -8,9 +8,12 @@ import { PrivateRoute } from './components/auth/PrivateRoute';
 import { CreateProjectForm } from './components/CreateProjectForm';
 import ProjectView from './components/ProjectView';
 
+// Get the base URL from Vite's import.meta.env
+const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 const AuthApp = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE_URL}>
       <AuthProvider>
         <Routes>
           {/* Public routes */}

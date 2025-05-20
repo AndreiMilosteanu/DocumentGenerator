@@ -133,6 +133,23 @@ export const FileList = ({ documentId }) => {
     }
   };
 
+  // Get status badge color and text
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      'processing': { color: 'bg-yellow-100 text-yellow-800', text: 'Verarbeitung' },
+      'ready': { color: 'bg-green-100 text-green-800', text: 'Bereit' },
+      'error': { color: 'bg-red-100 text-red-800', text: 'Fehler' },
+      'default': { color: 'bg-gray-100 text-gray-800', text: status }
+    };
+
+    const config = statusConfig[status?.toLowerCase()] || statusConfig.default;
+    return (
+      <span className={`text-xs px-2 py-1 rounded-full ${config.color}`}>
+        {config.text}
+      </span>
+    );
+  };
+
   // Ensure files is always an array
   const fileList = Array.isArray(files) ? files : [];
 
@@ -203,19 +220,36 @@ export const FileList = ({ documentId }) => {
           fileList.map((file) => (
             <div 
               key={file.id} 
-              className="flex items-center justify-between p-2 border border-gray-200 rounded-md hover:bg-gray-50"
+              className="flex flex-col p-2 border border-gray-200 rounded-md hover:bg-gray-50"
             >
-              <div className="flex items-center overflow-hidden">
-                <File className="w-4 h-4 text-gray-500 flex-shrink-0 mr-2" />
-                <span className="text-xs text-gray-700 truncate">{file.filename}</span>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center overflow-hidden">
+                  <File className="w-4 h-4 text-gray-500 flex-shrink-0 mr-2" />
+                  <span className="text-xs text-gray-700 truncate" title={file.original_filename}>
+                    {file.original_filename}
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleDeleteFile(file.id)}
+                  className="text-gray-400 hover:text-red-500 p-1"
+                  title="Datei löschen"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
               </div>
-              <button
-                onClick={() => handleDeleteFile(file.id)}
-                className="text-gray-400 hover:text-red-500 p-1"
-                title="Datei löschen"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  {getStatusBadge(file.status)}
+                  {file.error_message && (
+                    <span className="text-xs text-red-600" title={file.error_message}>
+                      <XCircle className="w-3 h-3" />
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-gray-500">
+                  {(file.file_size / (1024 * 1024)).toFixed(2)} MB
+                </span>
+              </div>
             </div>
           ))
         )}

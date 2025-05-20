@@ -116,7 +116,8 @@ export const Register = () => {
       }));
       
       // Redirect to dashboard
-      window.location.href = '/dashboard';
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+      window.location.href = `${baseUrl}/dashboard`;
     } catch (err) {
       console.error('Registration/login error:', err);
       setError(`${err.message}`);
