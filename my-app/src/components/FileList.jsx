@@ -158,23 +158,23 @@ export const FileList = ({ documentId }) => {
   const fileList = Array.isArray(files) ? files : [];
 
   return (
-    <div className="mt-6">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="font-medium text-gray-900">Dateien</h3>
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-1.5">
+        <h3 className="font-medium text-xs text-gray-700">Dateien</h3>
         <button 
           onClick={handleRefreshFiles}
           disabled={isRefreshing || isUploading}
-          className="text-gray-500 hover:text-blue-600 p-1 rounded-full disabled:opacity-50"
+          className="text-gray-500 hover:text-blue-600 p-0.5 rounded-full disabled:opacity-50"
           title="Dateien aktualisieren"
         >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
         </button>
       </div>
       
       {/* File Upload Area */}
       <div
         className={`border-2 border-dashed ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'} 
-          rounded-md p-3 text-center cursor-pointer mb-3 ${isUploading ? 'opacity-50' : ''}`}
+          rounded-md p-2 text-center cursor-pointer mb-1.5 ${isUploading ? 'opacity-50' : ''}`}
         onClick={() => !isUploading && fileInputRef.current?.click()}
         onDragEnter={(e) => handleDrag(e, true)}
         onDragOver={(e) => handleDrag(e, true)}
@@ -191,13 +191,13 @@ export const FileList = ({ documentId }) => {
         />
         
         {isUploading ? (
-          <div className="flex items-center justify-center py-2">
-            <Loader className="w-4 h-4 mr-2 animate-spin text-blue-500" />
-            <span className="text-sm text-gray-500">Hochladen...</span>
+          <div className="flex items-center justify-center py-1">
+            <Loader className="w-3.5 h-3.5 mr-1.5 animate-spin text-blue-500" />
+            <span className="text-xs text-gray-500">Hochladen...</span>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-2">
-            <Upload className="w-5 h-5 mb-1 text-gray-500" />
+          <div className="flex flex-col items-center justify-center py-1">
+            <Upload className="w-4 h-4 mb-0.5 text-gray-500" />
             <span className="text-xs text-gray-500">
               Datei hochladen (.pdf, .docx)
             </span>
@@ -207,42 +207,42 @@ export const FileList = ({ documentId }) => {
       
       {/* Error messages */}
       {(fileError || uploadError) && (
-        <div className="mb-3 text-xs text-red-500 flex items-center">
+        <div className="mb-1.5 text-xs text-red-500 flex items-center">
           <XCircle className="w-3 h-3 mr-1 flex-shrink-0" />
-          <span>{fileError || uploadError}</span>
+          <span className="text-xs">{fileError || uploadError}</span>
         </div>
       )}
       
       {/* File List */}
-      <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+      <div className="overflow-y-auto custom-scrollbar pr-1 space-y-1.5" style={{ maxHeight: '180px' }}>
         {fileList.length === 0 ? (
-          <div className="text-center text-gray-500 py-4 text-sm">
-            <Paperclip className="w-5 h-5 mx-auto mb-1" />
+          <div className="text-center text-gray-500 py-3 text-xs">
+            <Paperclip className="w-4 h-4 mx-auto mb-1" />
             <p>Keine Dateien vorhanden</p>
           </div>
         ) : (
           fileList.map((file) => (
             <div 
               key={file.id} 
-              className="flex flex-col p-2 border border-gray-200 rounded-md hover:bg-gray-50"
+              className="flex flex-col p-1.5 border border-gray-200 rounded-md hover:bg-gray-50"
             >
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center overflow-hidden">
-                  <File className="w-4 h-4 text-gray-500 flex-shrink-0 mr-2" />
+                  <File className="w-3.5 h-3.5 text-gray-500 flex-shrink-0 mr-1.5" />
                   <span className="text-xs text-gray-700 truncate" title={file.original_filename}>
                     {file.original_filename}
                   </span>
                 </div>
                 <button
                   onClick={() => handleDeleteFile(file.id)}
-                  className="text-gray-400 hover:text-red-500 p-1"
+                  className="text-gray-400 hover:text-red-500 p-0.5 ml-1"
                   title="Datei löschen"
                 >
-                  <Trash2 className="w-3 h-3" />
+                  <Trash2 className="w-3 h-3 flex-shrink-0" />
                 </button>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1.5">
                   {getStatusBadge(file.status)}
                   {file.error_message && (
                     <span className="text-xs text-red-600" title={file.error_message}>

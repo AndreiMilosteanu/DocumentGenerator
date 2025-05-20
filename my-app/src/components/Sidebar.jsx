@@ -63,84 +63,91 @@ export const Sidebar = ({
 
   return (
     <aside className="w-72 bg-white border-r flex flex-col h-full overflow-hidden">
-      <div className="p-6 flex flex-col flex-1">
+      <div className="px-4 py-4 flex flex-col h-full">
         {/* Back to Dashboard button */}
         <button 
           onClick={onBackToDashboard}
-          className="flex items-center text-blue-600 hover:text-blue-800 mb-6 text-sm"
+          className="flex items-center text-blue-600 hover:text-blue-800 mb-3 text-sm"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back to Dashboard
         </button>
 
-        <div className="mb-4">
-          <h2 className="font-semibold text-lg">{selectedTopic || 'Document'}</h2>
+        <div className="mb-3">
+          <h2 className="font-semibold text-base">{selectedTopic || 'Document'}</h2>
         </div>
         
-        {/* Document sections */}
-        <nav className="flex-1 overflow-y-auto pr-2">
-          {topicStructure ? (
-            <div className="space-y-4">
-              {topicStructure.sections.map((section) => (
-                <div key={section.key} className="border-b pb-2 last:border-b-0">
-                  <div 
-                    className="flex items-center justify-between cursor-pointer p-2 hover:bg-gray-50 rounded-lg font-medium"
-                    onClick={() => toggleSection(section.key)}
-                  >
-                    <span>{section.title}</span>
-                    {expandedSections[section.key] ? 
-                      <ChevronDown className="w-4 h-4" /> : 
-                      <ChevronRight className="w-4 h-4" />
-                    }
+        {/* Document sections - with fixed height and scrollbar */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="text-xs font-medium text-gray-500 mb-1 px-1">Document Sections</div>
+          <nav className="overflow-y-auto mb-3 flex-1 pr-1 custom-scrollbar">
+            {topicStructure ? (
+              <div className="space-y-2">
+                {topicStructure.sections.map((section) => (
+                  <div key={section.key} className="border-b pb-1 last:border-b-0">
+                    <div 
+                      className="flex items-center justify-between cursor-pointer p-1.5 hover:bg-gray-50 rounded-md text-sm font-medium"
+                      onClick={() => toggleSection(section.key)}
+                    >
+                      <span>{section.title}</span>
+                      {expandedSections[section.key] ? 
+                        <ChevronDown className="w-3.5 h-3.5" /> : 
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      }
+                    </div>
+                    
+                    {expandedSections[section.key] && (
+                      <ul className="ml-3 mt-1 space-y-0.5">
+                        {section.subsections.map((subsection) => {
+                          const isActive = activeSection === section.title && activeSubsection === subsection.title;
+                          const hasActiveConversation = hasConversation(section.key, subsection.key);
+                          const subsectionApproved = isApproved(section.key, subsection.key);
+                          
+                          return (
+                            <li
+                              key={subsection.key}
+                              onClick={() => handleSubsectionClick(section.title, subsection.title, section.key, subsection.key)}
+                              className={`cursor-pointer py-1.5 px-2 rounded-md flex items-center justify-between text-xs ${
+                                isActive ? 'bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <span className="flex-1 mr-2 truncate">{subsection.title}</span>
+                              <div className="flex items-center space-x-1.5 flex-shrink-0">
+                                {subsectionApproved && (
+                                  <span className="w-2 h-2 bg-green-500 rounded-full" title="Approved"></span>
+                                )}
+                                {hasActiveConversation && (
+                                  <MessageCircle className="w-3.5 h-3.5 text-blue-600" title="Has conversation" />
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
-                  
-                  {expandedSections[section.key] && (
-                    <ul className="ml-4 mt-2 space-y-1">
-                      {section.subsections.map((subsection) => {
-                        const isActive = activeSection === section.title && activeSubsection === subsection.title;
-                        const hasActiveConversation = hasConversation(section.key, subsection.key);
-                        const subsectionApproved = isApproved(section.key, subsection.key);
-                        
-                        return (
-                          <li
-                            key={subsection.key}
-                            onClick={() => handleSubsectionClick(section.title, subsection.title, section.key, subsection.key)}
-                            className={`cursor-pointer py-2 px-3 rounded-md flex items-center justify-between ${
-                              isActive ? 'bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <span className="flex-1 mr-2">{subsection.title}</span>
-                            <div className="flex items-center space-x-2">
-                              {subsectionApproved && (
-                                <span className="w-2 h-2 bg-green-500 rounded-full" title="Approved"></span>
-                              )}
-                              {hasActiveConversation && (
-                                <MessageCircle className="w-4 h-4 text-blue-600" title="Has conversation" />
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-              <AlertCircle className="w-6 h-6 mb-2" />
-              <p className="text-sm">Document structure not available</p>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-32 text-gray-500">
+                <AlertCircle className="w-5 h-5 mb-2" />
+                <p className="text-xs">Document structure not available</p>
+              </div>
+            )}
+          </nav>
+          
+          {/* File List Component with fixed height */}
+          {documentId && (
+            <div className="mt-1 mb-2 flex-shrink-0 max-h-60">
+              <FileList documentId={documentId} />
             </div>
           )}
-        </nav>
-        
-        {/* File List Component */}
-        {documentId && <FileList documentId={documentId} />}
+        </div>
       </div>
       
       {/* Error message for when we can't find the section in the PDF */}
       {showNotFoundError && (
-        <div className="p-6 pt-0">
+        <div className="px-4 pb-3">
           <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs">
             <p>Diese Sektion konnte im PDF nicht gefunden werden.</p>
           </div>

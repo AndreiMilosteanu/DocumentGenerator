@@ -81,19 +81,67 @@ export const documentStructure = {
     icon: '📋',
     sections: [
       {
-        key: 'Projekt Details',
-        title: 'Projekt Details',
+        key: 'Allgemeines und Bauvorhaben',
+        title: 'Allgemeines und Bauvorhaben',
         subsections: [
-          { key: 'Grundstücksdaten', title: 'Grundstücksdaten' },
-          { key: 'Bauvorhaben', title: 'Bauvorhaben' }
+          { key: 'Anlass und Vorgaben', title: 'Anlass und Vorgaben' },
+          { key: 'Geländeverhältnisse und Bauwerk', title: 'Geländeverhältnisse und Bauwerk' },
+          { key: 'Geotechnische Kategorie', title: 'Geotechnische Kategorie' },
+          { key: 'Geologie', title: 'Geologie' },
+          { key: 'Standortbezogene Gefährdungszonen', title: 'Standortbezogene Gefährdungszonen' }
         ]
       },
       {
-        key: 'Projekt Objectives',
-        title: 'Projekt Objectives',
+        key: 'Feldarbeiten',
+        title: 'Feldarbeiten',
         subsections: [
-          { key: 'Bewertung', title: 'Bewertung' },
-          { key: 'Empfehlungen', title: 'Empfehlungen' }
+          { key: 'Geotechnische Untersuchungen', title: 'Geotechnische Untersuchungen' },
+          { key: 'Untergrundverhältnisse', title: 'Untergrundverhältnisse' },
+          { key: 'Grundwasserverhältnisse', title: 'Grundwasserverhältnisse' },
+          { key: 'Wasserdurchlässigkeit der Böden', title: 'Wasserdurchlässigkeit der Böden' }
+        ]
+      },
+      {
+        key: 'Bodenkennwerte und Klassifikation',
+        title: 'Bodenkennwerte und Klassifikation',
+        subsections: [
+          { key: 'Geotechnische Kennwerte', title: 'Geotechnische Kennwerte' },
+          { key: 'Bodenklassifikation und Homogenbereiche', title: 'Bodenklassifikation und Homogenbereiche' }
+        ]
+      },
+      {
+        key: 'Gründungsempfehlung',
+        title: 'Gründungsempfehlung',
+        subsections: [
+          { key: 'Baugrundbeurteilung', title: 'Baugrundbeurteilung' },
+          { key: 'Einzel- und Streifenfundamente', title: 'Einzel- und Streifenfundamente' },
+          { key: 'Fundamentplatte', title: 'Fundamentplatte' },
+          { key: 'Allgemeine Vorgaben für alle Gründungsvarianten', title: 'Allgemeine Vorgaben für alle Gründungsvarianten' },
+          { key: 'Angaben zur Bemessung der Gründung', title: 'Angaben zur Bemessung der Gründung' }
+        ]
+      },
+      {
+        key: 'Wasserbeanspruchung und Abdichtung',
+        title: 'Wasserbeanspruchung und Abdichtung',
+        subsections: [
+          { key: 'Wasserbeanspruchung und Abdichtung', title: 'Wasserbeanspruchung und Abdichtung' }
+        ]
+      },
+      {
+        key: 'Bauausführung',
+        title: 'Bauausführung',
+        subsections: [
+          { key: 'Herstellen der Baugrube', title: 'Herstellen der Baugrube' },
+          { key: 'Wiedereinbau von anfallendem Bodenaushub', title: 'Wiedereinbau von anfallendem Bodenaushub' },
+          { key: 'Entsorgung von Bodenaushub', title: 'Entsorgung von Bodenaushub' },
+          { key: 'Hinweise', title: 'Hinweise' }
+        ]
+      },
+      {
+        key: 'Schlussbemerkung',
+        title: 'Schlussbemerkung',
+        subsections: [
+          { key: 'Schlussbemerkung', title: 'Schlussbemerkung' }
         ]
       },
       {
