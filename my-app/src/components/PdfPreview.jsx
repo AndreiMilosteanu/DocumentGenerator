@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react'
-import { Copy, Download, Loader, FileText } from 'lucide-react'
+import React, { useRef, useState, useEffect } from 'react'
+import { Copy, Download, Loader, FileText, RefreshCw } from 'lucide-react'
 
 export const PdfPreview = ({
   pdfUrl,
@@ -10,7 +10,61 @@ export const PdfPreview = ({
   className = ""
 }) => {
   const [isCopyingText, setIsCopyingText] = useState(false)
+  const [iframeKey, setIframeKey] = useState(Date.now()) // Add a key for forcing iframe refresh
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [currentPdfUrl, setCurrentPdfUrl] = useState(null)
   const iframeRef = useRef(null)
+  
+  // Effect to reload iframe when pdfUrl changes
+  useEffect(() => {
+    if (pdfUrl && pdfUrl !== currentPdfUrl) {
+      console.log('PDF URL changed, refreshing iframe:', {
+        old: currentPdfUrl,
+        new: pdfUrl
+      })
+      
+      setIsRefreshing(true)
+      
+      // Update the key to force a complete iframe reload
+      setIframeKey(Date.now())
+      
+      // Update the current URL
+      setCurrentPdfUrl(pdfUrl)
+      
+      // Directly manipulate the iframe if it exists
+      if (iframeRef.current) {
+        // This will force the iframe to reload
+        try {
+          iframeRef.current.src = pdfUrl
+        } catch (error) {
+          console.error('Error directly setting iframe src:', error)
+        }
+      }
+      
+      // Reset refreshing state after a delay
+      setTimeout(() => {
+        setIsRefreshing(false)
+      }, 1000)
+    }
+  }, [pdfUrl])
+
+  // Function to manually refresh the PDF
+  const handleRefreshPdf = () => {
+    if (pdfUrl && iframeRef.current) {
+      console.log('Manually refreshing PDF iframe')
+      setIsRefreshing(true)
+      
+      // Force reload by setting the src again
+      iframeRef.current.src = pdfUrl
+      
+      // Also update the key to ensure React re-renders the component
+      setIframeKey(Date.now())
+      
+      setTimeout(() => {
+        setIsRefreshing(false)
+      }, 1000)
+    }
+  }
 
   // Function to scroll to a specific section in the PDF
   const scrollToSection = async (sectionTitle) => {
@@ -51,7 +105,7 @@ export const PdfPreview = ({
   }, [activeSubsection, pdfUrl])
 
   const handleIframeLoad = () => {
-    console.log('PDF iframe loaded')
+    console.log('PDF iframe loaded with URL:', pdfUrl)
     if (onLoad) {
       // Give a small delay to ensure PDF is fully rendered
       setTimeout(() => {
@@ -92,6 +146,14 @@ export const PdfPreview = ({
         <h2 className="text-lg font-semibold">Dokumentvorschau</h2>
         <div className="flex items-center space-x-2">
           <button
+            onClick={handleRefreshPdf}
+            disabled={isRefreshing || isGeneratingPdf || !pdfUrl}
+            className="p-2 text-gray-600 hover:text-blue-600 focus:outline-none disabled:opacity-50"
+            title="PDF neu laden"
+          >
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+          <button
             onClick={handleCopyText}
             disabled={isCopyingText || isGeneratingPdf || !pdfUrl}
             className="p-2 text-gray-600 hover:text-blue-600 focus:outline-none disabled:opacity-50"
@@ -120,13 +182,21 @@ export const PdfPreview = ({
 
       <div className="flex-1 bg-white overflow-hidden">
         {pdfUrl ? (
-          <iframe
-            ref={iframeRef}
-            src={pdfUrl}
-            className="w-full h-full"
-            title="PDF Preview"
-            onLoad={handleIframeLoad}
-          />
+          <>
+            {isGeneratingPdf && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-10">
+                <Loader className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+            )}
+            <iframe
+              key={iframeKey} // Add key to force re-render when it changes
+              ref={iframeRef}
+              src={pdfUrl}
+              className="w-full h-full"
+              title="PDF Preview"
+              onLoad={handleIframeLoad}
+            />
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
             <FileText className="w-12 h-12 mb-2" />

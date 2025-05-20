@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { File, Upload, Trash2, Loader, XCircle, Paperclip, RefreshCw } from 'lucide-react';
 import { useFileUpload } from '../hooks/useFileUpload';
+import { useConversation } from '../hooks/useConversation';
 
 export const FileList = ({ documentId }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -16,6 +17,9 @@ export const FileList = ({ documentId }) => {
     listDocumentFiles,
     deleteFile
   } = useFileUpload();
+  
+  // Get fetchPdfPreview from useConversation
+  const { fetchPdfPreview } = useConversation();
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   const ALLOWED_FILE_TYPES = [
@@ -80,7 +84,7 @@ export const FileList = ({ documentId }) => {
     if (!validateFile(file)) return;
 
     try {
-      await uploadFileToDocument(documentId, file);
+      await uploadFileToDocument(documentId, file, null, null, fetchPdfPreview);
       // No need to refresh files explicitly as uploadFileToDocument now does this
       setFileError('');
     } catch (error) {
@@ -110,7 +114,7 @@ export const FileList = ({ documentId }) => {
     if (!validateFile(file)) return;
 
     try {
-      await uploadFileToDocument(documentId, file);
+      await uploadFileToDocument(documentId, file, null, null, fetchPdfPreview);
       // No need to refresh files explicitly as uploadFileToDocument now does this
       setFileError('');
     } catch (error) {
@@ -125,7 +129,7 @@ export const FileList = ({ documentId }) => {
     }
     
     try {
-      await deleteFile(documentId, fileId);
+      await deleteFile(documentId, fileId, fetchPdfPreview);
       // No need to refresh files as deleteFile already updates the local state
     } catch (error) {
       console.error('Error deleting file:', error);

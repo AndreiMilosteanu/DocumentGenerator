@@ -13,7 +13,7 @@ export const useFileUpload = () => {
   const loadedDocuments = useRef(new Set());
 
   // Scenario 2: Add files to existing document (outside conversation)
-  const uploadFileToDocument = async (documentId, file, section = null, subsection = null) => {
+  const uploadFileToDocument = async (documentId, file, section = null, subsection = null, onFileUploaded = null) => {
     setIsUploading(true);
     setUploadError(null);
     
@@ -67,6 +67,12 @@ export const useFileUpload = () => {
       // After successful upload, refresh the file list
       await listDocumentFiles(documentId, true);
       
+      // Call the callback to refresh the PDF if provided
+      if (typeof onFileUploaded === 'function') {
+        console.log('Calling callback to refresh PDF after file upload');
+        onFileUploaded(documentId);
+      }
+      
       return data;
     } catch (error) {
       console.error('Error uploading file to document:', error);
@@ -78,7 +84,7 @@ export const useFileUpload = () => {
   };
 
   // Scenario 3: Add files during conversation
-  const uploadFileWithMessage = async (documentId, file, message = '') => {
+  const uploadFileWithMessage = async (documentId, file, message = '', onFileUploaded = null) => {
     setIsUploading(true);
     setUploadError(null);
     
@@ -128,6 +134,12 @@ export const useFileUpload = () => {
       
       // After successful upload, refresh the file list
       await listDocumentFiles(documentId, true);
+      
+      // Call the callback to refresh the PDF if provided
+      if (typeof onFileUploaded === 'function') {
+        console.log('Calling callback to refresh PDF after file upload with message');
+        onFileUploaded(documentId);
+      }
       
       return data;
     } catch (error) {
@@ -224,7 +236,7 @@ export const useFileUpload = () => {
   };
 
   // Scenario 6: Delete an uploaded file
-  const deleteFile = async (documentId, fileId) => {
+  const deleteFile = async (documentId, fileId, onFileDeleted = null) => {
     setUploadError(null);
     
     try {
@@ -256,6 +268,12 @@ export const useFileUpload = () => {
         const fileArray = Array.isArray(prevFiles) ? prevFiles : [];
         return fileArray.filter(file => file.id !== fileId);
       });
+      
+      // Call the callback to refresh the PDF if provided
+      if (typeof onFileDeleted === 'function') {
+        console.log('Calling callback to refresh PDF after file deletion');
+        onFileDeleted(documentId);
+      }
       
       return data;
     } catch (error) {

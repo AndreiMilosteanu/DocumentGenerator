@@ -36,6 +36,13 @@ export const documentStructure = {
           { key: 'Laborberichte', title: 'Laborberichte' },
           { key: 'Auswertung', title: 'Auswertung' }
         ]
+      },
+      {
+        key: 'Anhänge',
+        title: 'Anhänge',
+        subsections: [
+          { key: 'Dateien', title: 'Dateien' }
+        ]
       }
     ]
   },

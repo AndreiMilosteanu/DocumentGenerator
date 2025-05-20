@@ -43,13 +43,15 @@ const ProjectView = () => {
     isSubsectionApproved,
     approveSubsectionData,
     startSubsectionConversation,
-    fetchSubsectionMessages
+    fetchSubsectionMessages,
+    fetchPdfPreview
   } = useConversation();
 
   const {
     isUploading,
     uploadFileWithMessage,
-    resetCache: resetFileCache
+    resetCache: resetFileCache,
+    uploadFileToDocument
   } = useFileUpload();
 
   const messagesEndRef = useRef(null);
@@ -326,30 +328,38 @@ const ProjectView = () => {
     e.preventDefault();
     if ((!inputMessage.trim() && !selectedFile) || !activeProject) return;
     
+    // Store message locally to allow clearing input immediately
+    const messageToSend = inputMessage.trim();
+    
+    // Clear message input immediately for better user experience
+    setInputMessage('');
+    
     try {
       if (selectedFile) {
         // If we have a file, use the uploadFileWithMessage endpoint
         console.log('Sending message with file:', {
           documentId: activeProject.documentId,
           fileName: selectedFile.name,
-          hasMessage: !!inputMessage.trim()
+          hasMessage: !!messageToSend
         });
         
         await uploadFileWithMessage(
           activeProject.documentId,
           selectedFile,
-          inputMessage
+          messageToSend,
+          fetchPdfPreview // Pass callback to refresh PDF
         );
         
         // Clear file after successful upload
         setSelectedFile(null);
+        
+        // PDF refresh now handled by the callback
       } else {
         // If no file, use the regular message sending
-        await sendMessage(inputMessage, activeProject.documentId);
+        await sendMessage(messageToSend, activeProject.documentId);
       }
       
-      // Clear message input in either case
-      setInputMessage('');
+      // Input already cleared above
       setFileError('');
     } catch (error) {
       console.error('Error sending message or file:', error);
@@ -374,21 +384,35 @@ const ProjectView = () => {
     return { valid: true, error: '' };
   };
 
-  const handleFile = (file) => {
-    const validation = validateFile(file);
-    
-    if (validation.valid) {
-      setSelectedFile(file);
-      setFileError('');
-    } else {
-      setFileError(validation.error);
-    }
-  };
-
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const files = e.target.files;
     if (files.length > 0) {
-      handleFile(files[0]);
+      const file = files[0];
+      const validation = validateFile(file);
+      
+      if (validation.valid) {
+        setSelectedFile(file);
+        setFileError('');
+        
+        // If this is a direct file upload (not with a message), upload it immediately
+        if (!inputMessage.trim() && activeProject?.documentId) {
+          try {
+            await uploadFileToDocument(
+              activeProject.documentId, 
+              file, 
+              activeSectionKey, 
+              activeSubsectionKey,
+              fetchPdfPreview // Pass callback to refresh PDF
+            );
+            setSelectedFile(null);
+          } catch (error) {
+            console.error('Error uploading file:', error);
+            setFileError('Fehler beim Hochladen der Datei.');
+          }
+        }
+      } else {
+        setFileError(validation.error);
+      }
     }
   };
 
@@ -405,7 +429,30 @@ const ProjectView = () => {
     
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      handleFile(files[0]);
+      const file = files[0];
+      const validation = validateFile(file);
+      
+      if (validation.valid) {
+        setSelectedFile(file);
+        setFileError('');
+        
+        // If this is a direct file upload (not with a message), upload it immediately
+        if (!inputMessage.trim() && activeProject?.documentId) {
+          uploadFileToDocument(
+            activeProject.documentId, 
+            file, 
+            activeSectionKey, 
+            activeSubsectionKey,
+            fetchPdfPreview // Pass callback to refresh PDF
+          ).catch(error => {
+            console.error('Error uploading file:', error);
+            setFileError('Fehler beim Hochladen der Datei.');
+          });
+          setSelectedFile(null);
+        }
+      } else {
+        setFileError(validation.error);
+      }
     }
   };
 

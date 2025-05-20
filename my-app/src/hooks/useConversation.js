@@ -23,12 +23,24 @@ export const useConversation = () => {
     console.log('Fetching PDF preview for document:', documentId);
     setIsGeneratingPdf(true)
     try {
-      const url = `${API_BASE_URL}/documents/${documentId}/pdf`;
+      // If there's an existing PDF URL for this document, revoke it to prevent memory leaks
+      const existingPdfUrl = pdfUrls[documentId];
+      if (existingPdfUrl && existingPdfUrl.startsWith('blob:')) {
+        console.log('Revoking previous blob URL:', existingPdfUrl);
+        URL.revokeObjectURL(existingPdfUrl);
+      }
+      
+      // Add timestamp to URL to prevent caching
+      const timestamp = new Date().getTime();
+      const url = `${API_BASE_URL}/documents/${documentId}/pdf?t=${timestamp}`;
       console.log('Making API request to fetch PDF:', url);
       
       const response = await fetch(url, {
         headers: {
-          ...getAuthHeader()
+          ...getAuthHeader(),
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       })
       if (!response.ok) {
@@ -43,15 +55,27 @@ export const useConversation = () => {
       }
       
       const blob = await response.blob()
-      const pdfUrl = URL.createObjectURL(blob)
+      // Add timestamp to ensure the URL is always unique
+      const pdfUrl = URL.createObjectURL(blob) + '#t=' + timestamp;
       console.log('PDF fetched successfully, created URL:', pdfUrl);
       
-      setPdfUrls(prev => ({
-        ...prev,
-        [documentId]: pdfUrl
-      }))
+      // Update the state with the new URL - use function form to ensure we have the latest state
+      setPdfUrls(prev => {
+        const newUrls = {
+          ...prev,
+          [documentId]: pdfUrl
+        };
+        console.log('Updated PDF URLs:', {
+          previous: prev[documentId],
+          new: pdfUrl
+        });
+        return newUrls;
+      });
+      
+      return pdfUrl; // Return the URL for potential direct use
     } catch (error) {
       console.error('Failed to fetch PDF:', error)
+      return null;
     } finally {
       setIsGeneratingPdf(false)
     }
@@ -1386,6 +1410,7 @@ export const useConversation = () => {
     sendMessage,
     setMessages,
     downloadPdf,
-    loadExistingProject
+    loadExistingProject,
+    fetchPdfPreview
   }
 } 
