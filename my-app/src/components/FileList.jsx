@@ -84,7 +84,15 @@ export const FileList = ({ documentId }) => {
     if (!validateFile(file)) return;
 
     try {
-      await uploadFileToDocument(documentId, file, null, null, fetchPdfPreview);
+      console.log('FileList: Uploading file and then refreshing PDF', { fileName: file.name, documentId });
+      
+      // Define a callback for refreshing the PDF after upload
+      const refreshPdfCallback = (docId) => {
+        console.log('FileList: Refreshing PDF after file upload', { docId });
+        return fetchPdfPreview(docId);
+      };
+      
+      await uploadFileToDocument(documentId, file, null, null, refreshPdfCallback);
       // No need to refresh files explicitly as uploadFileToDocument now does this
       setFileError('');
     } catch (error) {
@@ -114,7 +122,15 @@ export const FileList = ({ documentId }) => {
     if (!validateFile(file)) return;
 
     try {
-      await uploadFileToDocument(documentId, file, null, null, fetchPdfPreview);
+      console.log('FileList: Uploading file via drop and then refreshing PDF', { fileName: file.name, documentId });
+      
+      // Define a callback for refreshing the PDF after upload
+      const refreshPdfCallback = (docId) => {
+        console.log('FileList: Refreshing PDF after file drop upload', { docId });
+        return fetchPdfPreview(docId);
+      };
+      
+      await uploadFileToDocument(documentId, file, null, null, refreshPdfCallback);
       // No need to refresh files explicitly as uploadFileToDocument now does this
       setFileError('');
     } catch (error) {
@@ -129,7 +145,15 @@ export const FileList = ({ documentId }) => {
     }
     
     try {
-      await deleteFile(documentId, fileId, fetchPdfPreview);
+      console.log('FileList: Deleting file and then refreshing PDF', { fileId, documentId });
+      
+      // Define a callback for refreshing the PDF after deletion
+      const refreshPdfCallback = (docId) => {
+        console.log('FileList: Refreshing PDF after file deletion', { docId });
+        return fetchPdfPreview(docId);
+      };
+      
+      await deleteFile(documentId, fileId, refreshPdfCallback);
       // No need to refresh files as deleteFile already updates the local state
     } catch (error) {
       console.error('Error deleting file:', error);

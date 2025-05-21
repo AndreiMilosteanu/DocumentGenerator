@@ -337,17 +337,23 @@ const ProjectView = () => {
     try {
       if (selectedFile) {
         // If we have a file, use the uploadFileWithMessage endpoint
-        console.log('Sending message with file:', {
+        console.log('ProjectView: Sending message with file:', {
           documentId: activeProject.documentId,
           fileName: selectedFile.name,
           hasMessage: !!messageToSend
         });
         
+        // Define a callback for refreshing the PDF after upload
+        const refreshPdfCallback = (docId) => {
+          console.log('ProjectView: Refreshing PDF after file upload with message', { docId });
+          return fetchPdfPreview(docId);
+        };
+        
         await uploadFileWithMessage(
           activeProject.documentId,
           selectedFile,
           messageToSend,
-          fetchPdfPreview // Pass callback to refresh PDF
+          refreshPdfCallback
         );
         
         // Clear file after successful upload
@@ -397,12 +403,25 @@ const ProjectView = () => {
         // If this is a direct file upload (not with a message), upload it immediately
         if (!inputMessage.trim() && activeProject?.documentId) {
           try {
+            console.log('ProjectView: Uploading file and then refreshing PDF', { 
+              fileName: file.name, 
+              documentId: activeProject.documentId,
+              section: activeSectionKey,
+              subsection: activeSubsectionKey
+            });
+            
+            // Define a callback for refreshing the PDF after upload
+            const refreshPdfCallback = (docId) => {
+              console.log('ProjectView: Refreshing PDF after file upload', { docId });
+              return fetchPdfPreview(docId);
+            };
+            
             await uploadFileToDocument(
               activeProject.documentId, 
               file, 
               activeSectionKey, 
               activeSubsectionKey,
-              fetchPdfPreview // Pass callback to refresh PDF
+              refreshPdfCallback
             );
             setSelectedFile(null);
           } catch (error) {
@@ -438,12 +457,25 @@ const ProjectView = () => {
         
         // If this is a direct file upload (not with a message), upload it immediately
         if (!inputMessage.trim() && activeProject?.documentId) {
+          console.log('ProjectView: Dropping file and then refreshing PDF', { 
+            fileName: file.name, 
+            documentId: activeProject.documentId,
+            section: activeSectionKey,
+            subsection: activeSubsectionKey
+          });
+          
+          // Define a callback for refreshing the PDF after upload
+          const refreshPdfCallback = (docId) => {
+            console.log('ProjectView: Refreshing PDF after file drop', { docId });
+            return fetchPdfPreview(docId);
+          };
+          
           uploadFileToDocument(
             activeProject.documentId, 
             file, 
             activeSectionKey, 
             activeSubsectionKey,
-            fetchPdfPreview // Pass callback to refresh PDF
+            refreshPdfCallback
           ).catch(error => {
             console.error('Error uploading file:', error);
             setFileError('Fehler beim Hochladen der Datei.');
@@ -581,6 +613,17 @@ const ProjectView = () => {
           isGeneratingPdf={isGeneratingPdf}
           activeSubsection={activeSubsection}
           onLoad={handlePdfLoad}
+          onRefreshPdf={() => {
+            console.log('onRefreshPdf called in ProjectView', { 
+              documentId: activeProject?.documentId 
+            });
+            if (!activeProject?.documentId) {
+              console.warn('No active project document ID available');
+              return Promise.resolve(null);
+            }
+            console.log('Calling fetchPdfPreview with document ID:', activeProject.documentId);
+            return fetchPdfPreview(activeProject.documentId);
+          }}
           className="w-1/2"
         />
       </div>

@@ -1095,6 +1095,17 @@ export const useConversation = () => {
           if (startResult.success) {
             sectionToUse = startResult.section;
             subsectionToUse = startResult.subsection;
+            
+            // For new projects, fetch the PDF even if the project doesn't initially have one
+            // This is only for brand new projects where we just started a conversation
+            console.log('Fetching initial PDF preview for new project');
+            try {
+              await fetchPdfPreview(documentId);
+              console.log('Initial PDF preview for new project fetched successfully');
+            } catch (pdfError) {
+              console.error('Failed to fetch initial PDF preview for new project:', pdfError);
+              // Don't fail the operation if PDF fetch fails
+            }
           }
         } else {
           // Select the existing conversation

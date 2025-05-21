@@ -7,6 +7,7 @@ export const PdfPreview = ({
   isGeneratingPdf,
   activeSubsection,
   onLoad,
+  onRefreshPdf,
   className = ""
 }) => {
   const [isCopyingText, setIsCopyingText] = useState(false)
@@ -50,21 +51,50 @@ export const PdfPreview = ({
 
   // Function to manually refresh the PDF
   const handleRefreshPdf = () => {
-    if (pdfUrl && iframeRef.current) {
-      console.log('Manually refreshing PDF iframe')
-      setIsRefreshing(true)
-      
-      // Force reload by setting the src again
-      iframeRef.current.src = pdfUrl
-      
-      // Also update the key to ensure React re-renders the component
-      setIframeKey(Date.now())
-      
-      setTimeout(() => {
-        setIsRefreshing(false)
-      }, 1000)
+    console.log('handleRefreshPdf clicked', { onRefreshPdf: !!onRefreshPdf });
+    if (!onRefreshPdf) {
+      console.log('No onRefreshPdf function provided');
+      return;
     }
-  }
+    
+    console.log('Manually refreshing PDF via API');
+    setIsRefreshing(true);
+    
+    // Call the API to refresh the PDF
+    try {
+      const result = onRefreshPdf();
+      console.log('onRefreshPdf function called, result:', result);
+      
+      if (result && typeof result.then === 'function') {
+        result
+          .then((response) => {
+            console.log('PDF refreshed successfully via API, response:', response);
+            // The pdfUrl prop will be updated by the parent component
+            // which will trigger the useEffect hook above
+            
+            // No need to do anything else here - the PDF will be refreshed
+            // automatically when the pdfUrl changes via the useEffect hook
+          })
+          .catch(error => {
+            console.error('Error refreshing PDF:', error);
+          })
+          .finally(() => {
+            // Delay resetting the refreshing state to ensure user sees feedback
+            setTimeout(() => {
+              setIsRefreshing(false);
+            }, 1000);
+          });
+      } else {
+        console.error('onRefreshPdf did not return a Promise');
+        setTimeout(() => {
+          setIsRefreshing(false);
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Error executing onRefreshPdf:', error);
+      setIsRefreshing(false);
+    }
+  };
 
   // Function to scroll to a specific section in the PDF
   const scrollToSection = async (sectionTitle) => {

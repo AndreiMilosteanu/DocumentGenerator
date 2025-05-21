@@ -70,7 +70,14 @@ export const useFileUpload = () => {
       // Call the callback to refresh the PDF if provided
       if (typeof onFileUploaded === 'function') {
         console.log('Calling callback to refresh PDF after file upload');
-        onFileUploaded(documentId);
+        try {
+          const result = onFileUploaded(documentId);
+          console.log('PDF refresh callback called result:', result);
+        } catch (callbackError) {
+          console.error('Error calling PDF refresh callback after file upload:', callbackError);
+        }
+      } else {
+        console.log('No PDF refresh callback provided for file upload');
       }
       
       return data;
@@ -138,7 +145,14 @@ export const useFileUpload = () => {
       // Call the callback to refresh the PDF if provided
       if (typeof onFileUploaded === 'function') {
         console.log('Calling callback to refresh PDF after file upload with message');
-        onFileUploaded(documentId);
+        try {
+          const result = onFileUploaded(documentId);
+          console.log('PDF refresh callback called result:', result);
+        } catch (callbackError) {
+          console.error('Error calling PDF refresh callback after file upload with message:', callbackError);
+        }
+      } else {
+        console.log('No PDF refresh callback provided for file upload with message');
       }
       
       return data;
@@ -272,7 +286,14 @@ export const useFileUpload = () => {
       // Call the callback to refresh the PDF if provided
       if (typeof onFileDeleted === 'function') {
         console.log('Calling callback to refresh PDF after file deletion');
-        onFileDeleted(documentId);
+        try {
+          const result = onFileDeleted(documentId);
+          console.log('PDF refresh callback called result:', result);
+        } catch (callbackError) {
+          console.error('Error calling PDF refresh callback after file deletion:', callbackError);
+        }
+      } else {
+        console.log('No PDF refresh callback provided for file deletion');
       }
       
       return data;
