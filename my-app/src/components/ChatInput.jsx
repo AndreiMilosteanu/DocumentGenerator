@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Send, Paperclip, Upload, XCircle, Check, Loader } from 'lucide-react'
 
 export const ChatInput = ({
@@ -26,6 +26,44 @@ export const ChatInput = ({
   const isButtonDisabled = isApprovingData || isLoading || isSubsectionApproved || isUploading;
   const isSendButtonDisabled = (!inputMessage.trim() && !selectedFile) || isLoading || !hasActiveConversation || isUploading;
   const isLoadingOrUploading = isLoading || isUploading;
+  const textareaRef = useRef(null);
+  
+  // Function to adjust textarea height based on content
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Reset height to auto to properly calculate the new height
+    textarea.style.height = 'auto';
+    
+    // Set new height (capped by max-height in CSS)
+    const newHeight = Math.min(textarea.scrollHeight, 150); // Maximum height of 150px
+    textarea.style.height = `${newHeight}px`;
+  };
+  
+  // Adjust height when the input message changes
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputMessage]);
+  
+  // Initial adjustment when the component mounts
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, []);
+  
+  // Handle input changes
+  const handleInputChange = (e) => {
+    onInputChange(e);
+    adjustTextareaHeight();
+  };
+  
+  // Handle keydown to submit form with Enter (unless Shift+Enter for new line)
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isSendButtonDisabled) {
+      e.preventDefault();
+      onSubmit(e);
+    }
+  };
   
   // Get approve button style based on approval state
   const getApproveButtonStyle = () => {
@@ -41,7 +79,7 @@ export const ChatInput = ({
         <form 
           onSubmit={onSubmit} 
           onDragEnter={onDragEnter}
-          className={`relative flex items-center space-x-2 ${
+          className={`relative flex items-start space-x-2 ${
             dragActive ? 'opacity-50' : ''
           }`}
         >
@@ -55,7 +93,7 @@ export const ChatInput = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 disabled:opacity-50"
+            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 disabled:opacity-50 mt-1"
             title="PDF oder DOCX anhängen (max. 10 MB)"
             disabled={!hasActiveConversation || isLoadingOrUploading}
           >
@@ -65,14 +103,21 @@ export const ChatInput = ({
               <Paperclip className="w-5 h-5" />
             )}
           </button>
-          <input
-            ref={inputRef}
-            type="text"
+          <textarea
+            ref={(el) => {
+              // Handle both refs
+              textareaRef.current = el;
+              if (inputRef) {
+                inputRef.current = el;
+              }
+            }}
             value={inputMessage}
-            onChange={onInputChange}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
             placeholder="Schreiben Sie Ihre Antwort..."
-            className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[44px] max-h-[150px] overflow-y-auto"
             disabled={!hasActiveConversation || isLoadingOrUploading}
+            rows={1}
           />
           
           {/* Approve button - placed before the send button */}
@@ -81,7 +126,7 @@ export const ChatInput = ({
               type="button" 
               onClick={onApproveData}
               disabled={isButtonDisabled}
-              className={`p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 flex items-center justify-center ${getApproveButtonStyle()} disabled:cursor-not-allowed`}
+              className={`p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 flex items-center justify-center ${getApproveButtonStyle()} disabled:cursor-not-allowed mt-1`}
               title={isSubsectionApproved ? "Daten sind bereits gespeichert" : "Daten in PDF übernehmen"}
             >
               {isApprovingData ? (
@@ -95,7 +140,7 @@ export const ChatInput = ({
           <button
             type="submit"
             disabled={isSendButtonDisabled}
-            className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed mt-1"
           >
             {isLoadingOrUploading ? (
               <Loader className="w-5 h-5 animate-spin" />
