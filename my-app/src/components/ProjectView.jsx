@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { PdfPreview } from './PdfPreview';
+import { EditSectionDataModal } from './EditSectionDataModal';
 import { useConversation } from '../hooks/useConversation';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE, documentStructure, API_BASE_URL } from '../constants/documentStructure';
@@ -26,6 +27,11 @@ const ProjectView = () => {
   const [isPdfLoaded, setIsPdfLoaded] = useState(false);
   const [projectLoading, setProjectLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // New state for edit modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [sectionData, setSectionData] = useState('');
+  const [isFetchingSectionData, setIsFetchingSectionData] = useState(false);
 
   const {
     getCurrentMessages,
@@ -41,7 +47,6 @@ const ProjectView = () => {
     activeSubsection: getActiveSubsection,
     subsectionStatus,
     isSubsectionApproved,
-    approveSubsectionData,
     startSubsectionConversation,
     fetchSubsectionMessages,
     fetchPdfPreview,
@@ -58,6 +63,177 @@ const ProjectView = () => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Function to fetch section data for the active subsection
+  const fetchSectionData = async () => {
+    if (!activeProject?.documentId || !activeSectionKey || !activeSubsectionKey) {
+      console.error('Cannot fetch section data - missing documentId, section, or subsection');
+      return null;
+    }
+    
+    setIsFetchingSectionData(true);
+    
+    try {
+      const url = `${API_BASE_URL}/conversation/${activeProject.documentId}/section-data/${activeSectionKey}/${activeSubsectionKey}`;
+      console.log('Fetching section data from:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          ...getAuthHeader(),
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to fetch section data:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText: errorText
+        });
+        throw new Error(`Failed to fetch section data: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Section data fetched successfully:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching section data:', error);
+      return null;
+    } finally {
+      setIsFetchingSectionData(false);
+    }
+  };
+  
+  // Function to update section data
+  const updateSectionData = async (value) => {
+    if (!activeProject?.documentId || !activeSectionKey || !activeSubsectionKey) {
+      console.error('Cannot update section data - missing documentId, section, or subsection');
+      throw new Error('Missing required data');
+    }
+    
+    try {
+      const url = `${API_BASE_URL}/conversation/${activeProject.documentId}/section-data/${activeSectionKey}/${activeSubsectionKey}`;
+      console.log('Updating section data at:', url);
+      
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ value }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to update section data:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText: errorText
+        });
+        throw new Error(`Failed to update section data: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Section data updated successfully:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('Error updating section data:', error);
+      throw error;
+    }
+  };
+  
+  // Function to update and approve section data in one step
+  const updateAndApproveSectionData = async (value, notifyAssistant = true) => {
+    if (!activeProject?.documentId || !activeSectionKey || !activeSubsectionKey) {
+      console.error('Cannot update and approve section data - missing documentId, section, or subsection');
+      throw new Error('Missing required data');
+    }
+    
+    try {
+      const url = `${API_BASE_URL}/conversation/${activeProject.documentId}/update-and-approve/${activeSectionKey}/${activeSubsectionKey}`;
+      console.log('Updating and approving section data at:', url);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ 
+          value,
+          notify_assistant: notifyAssistant
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to update and approve section data:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText: errorText
+        });
+        throw new Error(`Failed to update and approve section data: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Section data updated and approved successfully:', data);
+      
+      // Refresh the PDF after approval
+      await fetchPdfPreview(activeProject.documentId);
+      
+      return data;
+    } catch (error) {
+      console.error('Error updating and approving section data:', error);
+      throw error;
+    }
+  };
+
+  // Function to handle opening the edit modal
+  const handleEditSectionData = async () => {
+    try {
+      // Fetch the current section data
+      const data = await fetchSectionData();
+      
+      if (data) {
+        // Set the data in state for the modal
+        setSectionData(data.value || '');
+        
+        // Open the modal
+        setIsEditModalOpen(true);
+      }
+    } catch (error) {
+      console.error('Error preparing to edit section data:', error);
+    }
+  };
+  
+  // Function to handle updating section data from the modal
+  const handleUpdateSectionData = async (value) => {
+    try {
+      await updateSectionData(value);
+      // Update local state
+      setSectionData(value);
+      return true;
+    } catch (error) {
+      console.error('Error updating section data:', error);
+      throw error;
+    }
+  };
+  
+  // Function to handle updating and approving section data from the modal
+  const handleUpdateAndApproveSectionData = async (value, notifyAssistant) => {
+    try {
+      await updateAndApproveSectionData(value, notifyAssistant);
+      // Update local state
+      setSectionData(value);
+      return true;
+    } catch (error) {
+      console.error('Error updating and approving section data:', error);
+      throw error;
+    }
+  };
 
   // Load project details when component mounts
   useEffect(() => {
@@ -499,18 +675,6 @@ const ProjectView = () => {
     }
   };
 
-  const handleApproveData = async () => {
-    if (!activeProject || !activeSectionKey || !activeSubsectionKey) return;
-    
-    const result = await approveSubsectionData(
-      activeProject.documentId,
-      activeSectionKey,
-      activeSubsectionKey
-    );
-    
-    console.log('Approval result:', result);
-  };
-
   const handleBackToDashboard = () => {
     navigate('/dashboard');
   };
@@ -597,8 +761,8 @@ const ProjectView = () => {
             onDrop={handleDrop}
             fileInputRef={fileInputRef}
             inputRef={inputRef}
-            onApproveData={handleApproveData}
-            isApprovingData={isApprovingData}
+            onEditSectionData={handleEditSectionData}
+            isApprovingData={isApprovingData || isFetchingSectionData}
             isUploading={isUploading}
             isSubsectionApproved={
               activeProject && activeSectionKey && activeSubsectionKey ? 
@@ -628,6 +792,20 @@ const ProjectView = () => {
           className="w-3/5"
         />
       </div>
+      
+      {/* Edit Section Data Modal */}
+      <EditSectionDataModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        documentId={activeProject?.documentId}
+        section={activeSectionKey}
+        sectionTitle={activeSection}
+        subsection={activeSubsectionKey}
+        subsectionTitle={activeSubsection}
+        onUpdateAndApprove={handleUpdateAndApproveSectionData}
+        onUpdate={handleUpdateSectionData}
+        initialValue={sectionData}
+      />
     </div>
   );
 };

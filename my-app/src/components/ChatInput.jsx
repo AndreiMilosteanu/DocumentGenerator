@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { Send, Paperclip, Upload, XCircle, Check, Loader } from 'lucide-react'
+import { Send, Paperclip, Upload, XCircle, Edit, Loader } from 'lucide-react'
 
 export const ChatInput = ({
   inputMessage,
@@ -17,13 +17,13 @@ export const ChatInput = ({
   onDrop,
   fileInputRef,
   inputRef,
-  onApproveData,
+  onEditSectionData,
   isApprovingData,
   isSubsectionApproved,
   isUploading
 }) => {
   // Determine button state for rendering
-  const isButtonDisabled = isApprovingData || isLoading || isSubsectionApproved || isUploading;
+  const isButtonDisabled = isApprovingData || isLoading || isUploading;
   const isSendButtonDisabled = (!inputMessage.trim() && !selectedFile) || isLoading || !hasActiveConversation || isUploading;
   const isLoadingOrUploading = isLoading || isUploading;
   const textareaRef = useRef(null);
@@ -66,7 +66,7 @@ export const ChatInput = ({
   };
   
   // Get approve button style based on approval state
-  const getApproveButtonStyle = () => {
+  const getEditButtonStyle = () => {
     if (isSubsectionApproved) {
       return 'bg-green-500 text-white';
     }
@@ -120,19 +120,19 @@ export const ChatInput = ({
             rows={1}
           />
           
-          {/* Approve button - placed before the send button */}
+          {/* Edit & Approve button - placed before the send button */}
           {hasActiveConversation && (
             <button
               type="button" 
-              onClick={onApproveData}
+              onClick={onEditSectionData}
               disabled={isButtonDisabled}
-              className={`p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 flex items-center justify-center ${getApproveButtonStyle()} disabled:cursor-not-allowed mt-1`}
-              title={isSubsectionApproved ? "Daten sind bereits gespeichert" : "Daten in PDF übernehmen"}
+              className={`p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 flex items-center justify-center ${getEditButtonStyle()} disabled:cursor-not-allowed mt-1`}
+              title={isSubsectionApproved ? "Daten sind bereits gespeichert, aber können bearbeitet werden" : "Daten bearbeiten und in PDF übernehmen"}
             >
               {isApprovingData ? (
                 <Loader className="w-5 h-5 animate-spin" />
               ) : (
-                <Check className="w-5 h-5" />
+                <Edit className="w-5 h-5" />
               )}
             </button>
           )}
