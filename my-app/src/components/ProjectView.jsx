@@ -24,7 +24,7 @@ const ProjectView = () => {
   const [dragActive, setDragActive] = useState(false);
   const [fileError, setFileError] = useState('');
   const [isPdfLoaded, setIsPdfLoaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [projectLoading, setProjectLoading] = useState(true);
   const [error, setError] = useState('');
 
   const {
@@ -44,14 +44,15 @@ const ProjectView = () => {
     approveSubsectionData,
     startSubsectionConversation,
     fetchSubsectionMessages,
-    fetchPdfPreview
+    fetchPdfPreview,
+    setMessages,
+    setIsLoading
   } = useConversation();
 
   const {
     isUploading,
     uploadFileWithMessage,
-    resetCache: resetFileCache,
-    uploadFileToDocument
+    resetCache: resetFileCache
   } = useFileUpload();
 
   const messagesEndRef = useRef(null);
@@ -62,7 +63,7 @@ const ProjectView = () => {
   useEffect(() => {
     const fetchProjectDetails = async () => {
       console.log('%c [ProjectView] fetchProjectDetails - START', 'background: #ec4899; color: white', { projectId });
-      setIsLoading(true);
+      setProjectLoading(true);
       setError('');
       
       try {
@@ -192,7 +193,7 @@ const ProjectView = () => {
         console.error('%c [ProjectView] Failed to load project:', 'background: #ef4444; color: white', err);
         setError('Failed to load project. Please try again later.');
       } finally {
-        setIsLoading(false);
+        setProjectLoading(false);
       }
     };
     
@@ -334,6 +335,9 @@ const ProjectView = () => {
     // Clear message input immediately for better user experience
     setInputMessage('');
     
+    // Get message key for this subsection
+    const messageKey = `${activeProject.documentId}/${activeSectionKey}/${activeSubsectionKey}`;
+    
     try {
       if (selectedFile) {
         // If we have a file, use the uploadFileWithMessage endpoint
@@ -343,25 +347,65 @@ const ProjectView = () => {
           hasMessage: !!messageToSend
         });
         
-        // Define a callback for refreshing the PDF after upload
-        const refreshPdfCallback = (docId) => {
-          console.log('ProjectView: Refreshing PDF after file upload with message', { docId });
-          return fetchPdfPreview(docId);
-        };
+        // Show loading state by setting isLoading
+        setIsLoading(true);
         
-        await uploadFileWithMessage(
+        // Add user's message to conversation immediately
+        if (messageToSend) {
+          setMessages(prev => ({
+            ...prev,
+            [messageKey]: [...(prev[messageKey] || []), {
+              role: 'user',
+              content: messageToSend,
+              timestamp: new Date().toISOString()
+            }]
+          }));
+        } else {
+          // If no text message, add a placeholder about the file
+          setMessages(prev => ({
+            ...prev,
+            [messageKey]: [...(prev[messageKey] || []), {
+              role: 'user',
+              content: `[Datei: ${selectedFile.name}]`,
+              timestamp: new Date().toISOString()
+            }]
+          }));
+        }
+        
+        // Do not pass PDF refresh callback here
+        const response = await uploadFileWithMessage(
           activeProject.documentId,
           selectedFile,
           messageToSend,
-          refreshPdfCallback
+          null // No PDF refresh after file upload
         );
+        
+        console.log('File upload with message response:', response);
+        
+        // Add assistant response to conversation
+        if (response) {
+          // The response structure might be { message } or it might have the message in another property
+          const assistantMessage = response.message || response.assistant_message || response.content || 
+                                 (typeof response === 'string' ? response : 'Datei erfolgreich hochgeladen');
+          
+          console.log('Adding assistant response to conversation:', assistantMessage);
+          
+          setMessages(prev => ({
+            ...prev,
+            [messageKey]: [...(prev[messageKey] || []), {
+              role: 'assistant',
+              content: assistantMessage,
+              timestamp: new Date().toISOString()
+            }]
+          }));
+        }
         
         // Clear file after successful upload
         setSelectedFile(null);
         
-        // PDF refresh now handled by the callback
       } else {
-        // If no file, use the regular message sending
+        // If no file, use the regular message sending which already handles loading state
+        // and conversation updates
         await sendMessage(messageToSend, activeProject.documentId);
       }
       
@@ -370,6 +414,19 @@ const ProjectView = () => {
     } catch (error) {
       console.error('Error sending message or file:', error);
       setFileError('Fehler beim Senden der Nachricht oder Datei. Bitte versuchen Sie es erneut.');
+      
+      // Add error message to conversation
+      setMessages(prev => ({
+        ...prev,
+        [messageKey]: [...(prev[messageKey] || []), {
+          role: 'assistant',
+          content: 'Es gab ein Problem beim Senden der Nachricht. Bitte versuchen Sie es erneut.',
+          timestamp: new Date().toISOString()
+        }]
+      }));
+    } finally {
+      // Ensure loading state is reset when done
+      setIsLoading(false);
     }
   };
 
@@ -397,38 +454,9 @@ const ProjectView = () => {
       const validation = validateFile(file);
       
       if (validation.valid) {
+        // Just store the file and wait for the send button to be pressed
         setSelectedFile(file);
         setFileError('');
-        
-        // If this is a direct file upload (not with a message), upload it immediately
-        if (!inputMessage.trim() && activeProject?.documentId) {
-          try {
-            console.log('ProjectView: Uploading file and then refreshing PDF', { 
-              fileName: file.name, 
-              documentId: activeProject.documentId,
-              section: activeSectionKey,
-              subsection: activeSubsectionKey
-            });
-            
-            // Define a callback for refreshing the PDF after upload
-            const refreshPdfCallback = (docId) => {
-              console.log('ProjectView: Refreshing PDF after file upload', { docId });
-              return fetchPdfPreview(docId);
-            };
-            
-            await uploadFileToDocument(
-              activeProject.documentId, 
-              file, 
-              activeSectionKey, 
-              activeSubsectionKey,
-              refreshPdfCallback
-            );
-            setSelectedFile(null);
-          } catch (error) {
-            console.error('Error uploading file:', error);
-            setFileError('Fehler beim Hochladen der Datei.');
-          }
-        }
       } else {
         setFileError(validation.error);
       }
@@ -452,36 +480,9 @@ const ProjectView = () => {
       const validation = validateFile(file);
       
       if (validation.valid) {
+        // Just store the file and wait for the send button to be pressed
         setSelectedFile(file);
         setFileError('');
-        
-        // If this is a direct file upload (not with a message), upload it immediately
-        if (!inputMessage.trim() && activeProject?.documentId) {
-          console.log('ProjectView: Dropping file and then refreshing PDF', { 
-            fileName: file.name, 
-            documentId: activeProject.documentId,
-            section: activeSectionKey,
-            subsection: activeSubsectionKey
-          });
-          
-          // Define a callback for refreshing the PDF after upload
-          const refreshPdfCallback = (docId) => {
-            console.log('ProjectView: Refreshing PDF after file drop', { docId });
-            return fetchPdfPreview(docId);
-          };
-          
-          uploadFileToDocument(
-            activeProject.documentId, 
-            file, 
-            activeSectionKey, 
-            activeSubsectionKey,
-            refreshPdfCallback
-          ).catch(error => {
-            console.error('Error uploading file:', error);
-            setFileError('Fehler beim Hochladen der Datei.');
-          });
-          setSelectedFile(null);
-        }
       } else {
         setFileError(validation.error);
       }
@@ -521,7 +522,7 @@ const ProjectView = () => {
     }
   }, [projectId, resetFileCache]);
 
-  if (isLoading) {
+  if (projectLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -560,7 +561,7 @@ const ProjectView = () => {
       />
       
       <div className="flex-1 flex overflow-hidden">
-        <div className="border-r w-1/2 flex flex-col">
+        <div className="border-r w-2/5 flex flex-col">
           <div className="bg-white border-b px-4 py-3">
             <h1 className="text-lg font-semibold text-gray-900">
               {activeProject?.name || 'Project View'}
@@ -624,7 +625,7 @@ const ProjectView = () => {
             console.log('Calling fetchPdfPreview with document ID:', activeProject.documentId);
             return fetchPdfPreview(activeProject.documentId);
           }}
-          className="w-1/2"
+          className="w-3/5"
         />
       </div>
     </div>

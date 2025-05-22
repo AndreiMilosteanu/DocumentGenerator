@@ -24,6 +24,8 @@ export const ChatInput = ({
 }) => {
   // Determine button state for rendering
   const isButtonDisabled = isApprovingData || isLoading || isSubsectionApproved || isUploading;
+  const isSendButtonDisabled = (!inputMessage.trim() && !selectedFile) || isLoading || !hasActiveConversation || isUploading;
+  const isLoadingOrUploading = isLoading || isUploading;
   
   // Get approve button style based on approval state
   const getApproveButtonStyle = () => {
@@ -55,7 +57,7 @@ export const ChatInput = ({
             onClick={() => fileInputRef.current?.click()}
             className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 disabled:opacity-50"
             title="PDF oder DOCX anhängen (max. 10 MB)"
-            disabled={!hasActiveConversation || isUploading}
+            disabled={!hasActiveConversation || isLoadingOrUploading}
           >
             {isUploading ? (
               <Loader className="w-5 h-5 animate-spin" />
@@ -70,7 +72,7 @@ export const ChatInput = ({
             onChange={onInputChange}
             placeholder="Schreiben Sie Ihre Antwort..."
             className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={!hasActiveConversation || isUploading}
+            disabled={!hasActiveConversation || isLoadingOrUploading}
           />
           
           {/* Approve button - placed before the send button */}
@@ -92,10 +94,10 @@ export const ChatInput = ({
           
           <button
             type="submit"
-            disabled={(!inputMessage.trim() && !selectedFile) || isLoading || !hasActiveConversation || isUploading}
+            disabled={isSendButtonDisabled}
             className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading || isUploading ? (
+            {isLoadingOrUploading ? (
               <Loader className="w-5 h-5 animate-spin" />
             ) : (
               <Send className="w-5 h-5" />
@@ -131,7 +133,7 @@ export const ChatInput = ({
               <button
                 onClick={onFileRemove}
                 className="text-gray-400 hover:text-gray-600"
-                disabled={isUploading}
+                disabled={isLoadingOrUploading}
               >
                 <XCircle className="w-4 h-4" />
               </button>

@@ -1422,6 +1422,7 @@ export const useConversation = () => {
     setMessages,
     downloadPdf,
     loadExistingProject,
-    fetchPdfPreview
+    fetchPdfPreview,
+    setIsLoading
   }
 } 
