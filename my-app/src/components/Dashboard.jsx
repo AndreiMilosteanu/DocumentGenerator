@@ -353,9 +353,13 @@ export const Dashboard = () => {
               <div className="flex items-center space-x-3">
                 <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-sm border border-stone-200">
                   <img 
-                    src="/erdbaron-logo.png" 
+                    src={`${import.meta.env.BASE_URL}erdbaron-logo.png`}
                     alt="Erdbaron Logo" 
                     className="w-14 h-14 object-contain"
+                    onError={(e) => {
+                      console.error('Logo failed to load:', e.target.src);
+                      e.target.style.display = 'none';
+                    }}
                   />
                 </div>
                 <div className="text-stone-800">

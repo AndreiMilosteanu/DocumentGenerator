@@ -135,9 +135,13 @@ export const Register = () => {
             <div className="flex justify-center mb-6">
               <div className="w-28 h-28 bg-white rounded-2xl flex items-center justify-center shadow-lg">
                 <img 
-                  src="/erdbaron-logo.png" 
+                  src={`${import.meta.env.BASE_URL}erdbaron-logo.png`}
                   alt="Erdbaron Logo" 
                   className="w-24 h-24 object-contain"
+                  onError={(e) => {
+                    console.error('Logo failed to load:', e.target.src);
+                    e.target.style.display = 'none';
+                  }}
                 />
               </div>
             </div>

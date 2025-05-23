@@ -116,11 +116,15 @@ export const Login = () => {
           {/* Header with Erdbaron branding */}
           <div className="bg-gradient-to-r from-amber-700 to-orange-600 px-8 py-8 text-center">
             <div className="flex justify-center mb-6">
-              <div className="w-28 h-28 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-lg">
                 <img 
-                  src="/erdbaron-logo.png" 
+                  src={`${import.meta.env.BASE_URL}erdbaron-logo.png`}
                   alt="Erdbaron Logo" 
-                  className="w-24 h-24 object-contain"
+                  className="w-16 h-16 object-contain"
+                  onError={(e) => {
+                    console.error('Logo failed to load:', e.target.src);
+                    e.target.style.display = 'none';
+                  }}
                 />
               </div>
             </div>
