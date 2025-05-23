@@ -6,6 +6,7 @@ import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { PdfPreview } from './PdfPreview';
 import { EditSectionDataModal } from './EditSectionDataModal';
+import { CoverPageEditor } from './CoverPageEditor';
 import { useConversation } from '../hooks/useConversation';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE, documentStructure, API_BASE_URL } from '../constants/documentStructure';
@@ -27,6 +28,9 @@ const ProjectView = () => {
   const [isPdfLoaded, setIsPdfLoaded] = useState(false);
   const [projectLoading, setProjectLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Cover page state
+  const [isDeckblattActive, setIsDeckblattActive] = useState(false);
   
   // New state for edit modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -273,95 +277,44 @@ const ProjectView = () => {
         setActiveProject(formattedProject);
         
         // Load project data including conversation history and PDF status
-        // This may initialize a conversation if none exists
         console.log('%c [ProjectView] Loading existing project data', 'background: #ec4899; color: white', { 
           projectId, documentId: formattedProject.documentId 
         });
-        const projectResult = await loadExistingProject(projectId, formattedProject.documentId);
+        await loadExistingProject(projectId, formattedProject.documentId);
         
         // Update PDF loaded state
         setIsPdfLoaded(formattedProject.hasPdf);
         
-        // Use the active section and subsection directly from the loadExistingProject result if available
-        if (projectResult.activeSection && projectResult.activeSubsection) {
-          console.log('%c [ProjectView] Using active section/subsection from loadExistingProject', 'background: #ec4899; color: white', {
-            section: projectResult.activeSection,
-            subsection: projectResult.activeSubsection
-          });
+        // Check if there's an existing active conversation from the hook state
+        const active = getActiveSubsection(formattedProject.documentId);
+        console.log('%c [ProjectView] Active subsection from hook state:', 'background: #ec4899; color: white', active);
+        
+        // If there's an active subsection, use it to update the UI
+        if (active && active.section && active.subsection) {
+          // Set the active keys first
+          setActiveSectionKey(active.section);
+          setActiveSubsectionKey(active.subsection);
           
           // Get section and subsection titles
           const { sectionTitle, subsectionTitle } = getSectionAndSubsectionTitles(
             formattedProject.topic, 
-            projectResult.activeSection, 
-            projectResult.activeSubsection
+            active.section, 
+            active.subsection
           );
           
-          // Set the active keys and titles for UI
-          setActiveSectionKey(projectResult.activeSection);
-          setActiveSubsectionKey(projectResult.activeSubsection);
           setActiveSection(sectionTitle);
           setActiveSubsection(subsectionTitle);
           
-          console.log('%c [ProjectView] Set active subsection from loadExistingProject result:', 'background: #ec4899; color: white', {
-            sectionKey: projectResult.activeSection,
-            subsectionKey: projectResult.activeSubsection,
+          console.log('%c [ProjectView] Set active subsection in UI:', 'background: #ec4899; color: white', {
+            sectionKey: active.section,
+            subsectionKey: active.subsection,
             sectionTitle,
             subsectionTitle
           });
         } else {
-          // If loadExistingProject didn't return an active section/subsection (should be rare),
-          // check the active subsection from the hook state
-          const active = getActiveSubsection(formattedProject.documentId);
-          console.log('%c [ProjectView] Active subsection from hook state:', 'background: #ec4899; color: white', active);
-          
-          // If there's an active subsection, use it to update the UI
-          if (active && active.section && active.subsection) {
-            // Set the active keys first
-            setActiveSectionKey(active.section);
-            setActiveSubsectionKey(active.subsection);
-            
-            // Get section and subsection titles
-            const { sectionTitle, subsectionTitle } = getSectionAndSubsectionTitles(
-              formattedProject.topic, 
-              active.section, 
-              active.subsection
-            );
-            
-            setActiveSection(sectionTitle);
-            setActiveSubsection(subsectionTitle);
-            
-            console.log('%c [ProjectView] Set active subsection in UI:', 'background: #ec4899; color: white', {
-              sectionKey: active.section,
-              subsectionKey: active.subsection,
-              sectionTitle,
-              subsectionTitle
-            });
-          } else {
-            // If no active subsection is found, set the first section/subsection as active
-            console.log('%c [ProjectView] No active subsection found, selecting first subsection', 'background: #ec4899; color: white');
-            
-            const topicStructure = documentStructure[formattedProject.topic];
-            if (topicStructure && topicStructure.sections && topicStructure.sections.length > 0) {
-              const firstSection = topicStructure.sections[0];
-              
-              if (firstSection.subsections && firstSection.subsections.length > 0) {
-                const firstSubsection = firstSection.subsections[0];
-                
-                // Update UI state
-                setActiveSectionKey(firstSection.key);
-                setActiveSubsectionKey(firstSubsection.key);
-                setActiveSection(firstSection.title);
-                setActiveSubsection(firstSubsection.title);
-                
-                console.log('%c [ProjectView] Set first subsection as active:', 'background: #ec4899; color: white', {
-                  sectionKey: firstSection.key,
-                  subsectionKey: firstSubsection.key,
-                  sectionTitle: firstSection.title,
-                  subsectionTitle: firstSubsection.title
-                });
-              }
-            }
-          }
+          // No active subsection exists - this is intended for first project creation
+          // Don't select any section/subsection by default
+          console.log('%c [ProjectView] No active subsection found, not selecting any subsection', 'background: #ec4899; color: white');
         }
         
         console.log('%c [ProjectView] fetchProjectDetails - COMPLETE', 'background: #ec4899; color: white');
@@ -442,6 +395,9 @@ const ProjectView = () => {
     setActiveSubsection(subsectionTitle);
     setActiveSectionKey(sectionKey);
     setActiveSubsectionKey(subsectionKey);
+    
+    // Deactivate cover page when selecting a subsection
+    setIsDeckblattActive(false);
     
     // Check if this subsection already has a conversation
     const key = `${sectionKey}/${subsectionKey}`;
@@ -679,6 +635,25 @@ const ProjectView = () => {
     navigate('/dashboard');
   };
 
+  // Cover page handlers
+  const handleDeckblattClick = () => {
+    console.log('Deckblatt clicked');
+    setIsDeckblattActive(true);
+    // Clear any active subsection when switching to cover page
+    setActiveSection(null);
+    setActiveSubsection(null);
+    setActiveSectionKey(null);
+    setActiveSubsectionKey(null);
+  };
+
+  const handleCoverPageSave = async () => {
+    console.log('Cover page saved, refreshing PDF');
+    // Refresh the PDF after cover page is saved
+    if (activeProject?.documentId) {
+      await fetchPdfPreview(activeProject.documentId);
+    }
+  };
+
   // When project ID changes, reset file cache to ensure fresh data
   useEffect(() => {
     if (projectId) {
@@ -722,6 +697,8 @@ const ProjectView = () => {
         isSubsectionApproved={isSubsectionApproved}
         documentId={activeProject?.documentId}
         onBackToDashboard={handleBackToDashboard}
+        onDeckblattClick={handleDeckblattClick}
+        isDeckblattActive={isDeckblattActive}
       />
       
       <div className="flex-1 flex overflow-hidden">
@@ -729,47 +706,59 @@ const ProjectView = () => {
           <div className="bg-white border-b px-4 py-3">
             <h1 className="text-lg font-semibold text-gray-900">
               {activeProject?.name || 'Project View'}
-              {activeSection && <span className="text-sm font-normal text-gray-500 ml-2">→</span>}
-              {activeSection && <span className="text-sm ml-2">{activeSection}</span>}
-              {activeSubsection && <span className="text-sm font-normal text-gray-500 ml-2">→</span>}
-              {activeSubsection && <span className="text-sm ml-2">{activeSubsection}</span>}
+              {isDeckblattActive && <span className="text-sm font-normal text-gray-500 ml-2">→ Cover Page</span>}
+              {!isDeckblattActive && activeSection && <span className="text-sm font-normal text-gray-500 ml-2">→</span>}
+              {!isDeckblattActive && activeSection && <span className="text-sm ml-2">{activeSection}</span>}
+              {!isDeckblattActive && activeSubsection && <span className="text-sm font-normal text-gray-500 ml-2">→</span>}
+              {!isDeckblattActive && activeSubsection && <span className="text-sm ml-2">{activeSubsection}</span>}
             </h1>
           </div>
-          <ChatMessages
-            messages={getCurrentMessages(
-              activeProject?.documentId,
-              activeSectionKey,
-              activeSubsectionKey
-            )}
-            isLoading={isMessageLoading}
-            isStartingConversation={isStartingConversation}
-            messagesEndRef={messagesEndRef}
-          />
-          <ChatInput
-            inputMessage={inputMessage}
-            onInputChange={(e) => setInputMessage(e.target.value)}
-            onSubmit={handleSendMessage}
-            isLoading={isMessageLoading}
-            hasActiveConversation={!!(activeSectionKey && activeSubsectionKey)}
-            selectedFile={selectedFile}
-            onFileSelect={handleFileSelect}
-            onFileRemove={() => setSelectedFile(null)}
-            fileError={fileError}
-            dragActive={dragActive}
-            onDragEnter={(e) => handleDrag(e, true)}
-            onDragLeave={(e) => handleDrag(e, false)}
-            onDrop={handleDrop}
-            fileInputRef={fileInputRef}
-            inputRef={inputRef}
-            onEditSectionData={handleEditSectionData}
-            isApprovingData={isApprovingData || isFetchingSectionData}
-            isUploading={isUploading}
-            isSubsectionApproved={
-              activeProject && activeSectionKey && activeSubsectionKey ? 
-              isSubsectionApproved(activeProject.documentId, activeSectionKey, activeSubsectionKey) : 
-              false
-            }
-          />
+          
+          {/* Conditional rendering: Cover Page Editor or Chat Interface */}
+          {isDeckblattActive ? (
+            <CoverPageEditor 
+              documentId={activeProject?.documentId}
+              onSave={handleCoverPageSave}
+            />
+          ) : (
+            <>
+              <ChatMessages
+                messages={getCurrentMessages(
+                  activeProject?.documentId,
+                  activeSectionKey,
+                  activeSubsectionKey
+                )}
+                isLoading={isMessageLoading}
+                isStartingConversation={isStartingConversation}
+                messagesEndRef={messagesEndRef}
+              />
+              <ChatInput
+                inputMessage={inputMessage}
+                onInputChange={(e) => setInputMessage(e.target.value)}
+                onSubmit={handleSendMessage}
+                isLoading={isMessageLoading}
+                hasActiveConversation={!!(activeSectionKey && activeSubsectionKey)}
+                selectedFile={selectedFile}
+                onFileSelect={handleFileSelect}
+                onFileRemove={() => setSelectedFile(null)}
+                fileError={fileError}
+                dragActive={dragActive}
+                onDragEnter={(e) => handleDrag(e, true)}
+                onDragLeave={(e) => handleDrag(e, false)}
+                onDrop={handleDrop}
+                fileInputRef={fileInputRef}
+                inputRef={inputRef}
+                onEditSectionData={handleEditSectionData}
+                isApprovingData={isApprovingData || isFetchingSectionData}
+                isUploading={isUploading}
+                isSubsectionApproved={
+                  activeProject && activeSectionKey && activeSubsectionKey ? 
+                  isSubsectionApproved(activeProject.documentId, activeSectionKey, activeSubsectionKey) : 
+                  false
+                }
+              />
+            </>
+          )}
         </div>
         
         <PdfPreview

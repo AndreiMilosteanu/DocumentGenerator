@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
-import { ChevronRight, ChevronDown, MessageCircle, ChevronLeft, AlertCircle } from 'lucide-react'
+import { ChevronRight, ChevronDown, MessageCircle, ChevronLeft, AlertCircle, FileText } from 'lucide-react'
 import { documentStructure } from '../constants/documentStructure'
 import { FileList } from './FileList'
 
-export const Sidebar = ({ 
+export const Sidebar = ({
   selectedTopic,
   activeSection,
   activeSubsection,
@@ -11,7 +11,9 @@ export const Sidebar = ({
   subsectionStatus = {},
   isSubsectionApproved,
   documentId,
-  onBackToDashboard
+  onBackToDashboard,
+  onDeckblattClick,
+  isDeckblattActive
 }) => {
   const [expandedSections, setExpandedSections] = useState({});
   const [lastClickedSubsection, setLastClickedSubsection] = useState(null);
@@ -65,7 +67,7 @@ export const Sidebar = ({
     <aside className="w-72 bg-white border-r flex flex-col h-full overflow-hidden">
       <div className="px-4 py-4 flex flex-col h-full">
         {/* Back to Dashboard button */}
-        <button 
+        <button
           onClick={onBackToDashboard}
           className="flex items-center text-blue-600 hover:text-blue-800 mb-3 text-sm"
         >
@@ -75,6 +77,22 @@ export const Sidebar = ({
 
         <div className="mb-3">
           <h2 className="font-semibold text-base">{selectedTopic || 'Document'}</h2>
+        </div>
+        
+        {/* Deckblatt Section - Always visible for all topics */}
+        <div className="mb-4">
+          <div className="text-xs font-medium text-gray-500 mb-2 px-1">Cover Page</div>
+          <div
+            onClick={onDeckblattClick}
+            className={`cursor-pointer py-2 px-3 rounded-md flex items-center text-sm transition-colors ${
+              isDeckblattActive 
+                ? 'bg-blue-50 text-blue-600 font-medium border border-blue-200' 
+                : 'hover:bg-gray-50 border border-transparent'
+            }`}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            <span>Deckblatt</span>
+          </div>
         </div>
         
         {/* Document sections - with fixed height and scrollbar */}
