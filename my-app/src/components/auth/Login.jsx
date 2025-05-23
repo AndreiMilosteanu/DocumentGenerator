@@ -110,35 +110,48 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-8 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-white">
-              Anmelden
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-stone-200">
+          {/* Header with Erdbaron branding */}
+          <div className="bg-gradient-to-r from-amber-700 to-orange-600 px-8 py-8 text-center">
+            <div className="flex justify-center mb-6">
+              <div className="w-28 h-28 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+                <img 
+                  src="/erdbaron-logo.png" 
+                  alt="Erdbaron Logo" 
+                  className="w-24 h-24 object-contain"
+                />
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-white mb-2">
+              erdbaron®
+            </h1>
+            <h2 className="text-xl font-semibold text-white mb-2">
+              Welcome Back
             </h2>
-            <p className="mt-2 text-blue-100">
-              Willkommen zurück bei Ihrem Dokumentgenerator
+            <p className="text-amber-100">
+              Sign in to your Document Generator
             </p>
           </div>
           
-          <div className="px-6 py-8">
+          <div className="px-8 py-8">
             {error && (
-              <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md flex items-start" role="alert">
-                <AlertCircle className="h-5 w-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+              <div className="mb-6 bg-red-50 border border-red-200 p-4 rounded-xl flex items-start space-x-3" role="alert">
+                <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                 <span className="text-sm text-red-700">{error}</span>
               </div>
             )}
             
             <form className="space-y-6" onSubmit={handleDirectLogin}>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
-                  <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-1">
-                    E-Mail-Adresse
+                  <label htmlFor="email-address" className="block text-sm font-semibold text-stone-800 mb-2">
+                    Email Address
                   </label>
-                  <div className="relative rounded-md">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-stone-400" />
                     </div>
                     <input
                       id="email-address"
@@ -148,19 +161,19 @@ export const Login = () => {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      className="input-erdbaron pl-12 w-full"
                       placeholder="name@example.com"
                     />
                   </div>
                 </div>
                 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                    Passwort
+                  <label htmlFor="password" className="block text-sm font-semibold text-stone-800 mb-2">
+                    Password
                   </label>
-                  <div className="relative rounded-md">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400" />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-stone-400" />
                     </div>
                     <input
                       id="password"
@@ -170,7 +183,7 @@ export const Login = () => {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      className="input-erdbaron pl-12 w-full"
                       placeholder="••••••••"
                     />
                   </div>
@@ -181,34 +194,41 @@ export const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all duration-200 ease-in-out"
+                  className="w-full btn-erdbaron-primary py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
-                    <span className="flex items-center">
-                      <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
-                      Wird angemeldet...
+                    <span className="flex items-center justify-center">
+                      <Loader className="animate-spin mr-3 h-5 w-5 text-white" />
+                      Signing in...
                     </span>
-                  ) : 'Anmelden'}
+                  ) : 'Sign In'}
                 </button>
               </div>
             </form>
             
-            <div className="mt-8 pt-6 border-t border-gray-200 flex flex-col items-center">
-              <div className="text-sm text-center">
-                <span className="text-gray-600">Noch kein Konto?</span>{' '}
-                <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                  Registrieren
+            <div className="mt-8 pt-6 border-t border-stone-200 text-center space-y-4">
+              <div className="text-sm">
+                <span className="text-stone-600">Don't have an account?</span>{' '}
+                <Link to="/register" className="font-semibold text-amber-700 hover:text-amber-800 transition-colors">
+                  Sign up
                 </Link>
               </div>
               
               <button 
                 onClick={checkApiConnection}
-                className="mt-4 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-xs text-stone-500 hover:text-stone-700 transition-colors underline"
               >
-                API-Verbindung testen ({API_BASE_URL})
+                Test API Connection ({API_BASE_URL})
               </button>
             </div>
           </div>
+        </div>
+        
+        {/* Footer branding */}
+        <div className="text-center mt-8">
+          <p className="text-stone-500 text-sm">
+            Powered by <span className="font-semibold text-amber-700">erdbaron®</span> Document Generator
+          </p>
         </div>
       </div>
     </div>

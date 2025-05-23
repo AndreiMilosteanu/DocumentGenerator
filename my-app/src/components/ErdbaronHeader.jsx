@@ -1,29 +1,28 @@
 import React from 'react';
-import { colors } from '../constants/theme';
 
-export const ErdbaronHeader = ({ title }) => {
+export const ErdbaronHeader = ({ title, showLogo = true }) => {
   return (
-    <header className="bg-white border-b border-gray-200 px-4 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <h1 
-            className="text-lg font-semibold"
-            style={{ color: colors.text.primary }}
-          >
-            {title || 'Dokument'}
-          </h1>
-          
-          {/* Small Erdbaron branding */}
-          <div className="ml-3 flex items-center">
-            <span 
-              className="text-xs px-2 py-1 rounded"
-              style={{ 
-                backgroundColor: `${colors.primary.main}15`,
-                color: colors.primary.main
-              }}
-            >
-              erdbaron
-            </span>
+    <header className="bg-white border-b border-stone-200 shadow-sm">
+      <div className="px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            {showLogo && (
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-yellow-600 to-orange-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">E</span>
+                </div>
+                <div className="text-stone-800">
+                  <h1 className="text-xl font-bold">erdbaron®</h1>
+                  <p className="text-xs text-stone-600 -mt-1">Document Generator</p>
+                </div>
+              </div>
+            )}
+            {title && (
+              <>
+                <div className="h-6 w-px bg-stone-300 mx-4"></div>
+                <h2 className="text-lg font-semibold text-stone-800">{title}</h2>
+              </>
+            )}
           </div>
         </div>
       </div>

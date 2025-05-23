@@ -69,10 +69,10 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
     const fieldId = `${categoryKey}-${fieldKey}`;
 
     return (
-      <div key={fieldKey} className="mb-4">
+      <div key={fieldKey} className="mb-6">
         <label 
           htmlFor={fieldId}
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-sm font-semibold text-stone-800 mb-2"
         >
           {fieldConfig.label}
           {fieldConfig.required && <span className="text-red-500 ml-1">*</span>}
@@ -84,7 +84,7 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
             type="text"
             value={value}
             onChange={(e) => handleFieldChange(categoryKey, fieldKey, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="input-erdbaron w-full"
             placeholder={`Enter ${fieldConfig.label.toLowerCase()}`}
           />
         ) : fieldConfig.type === 'textarea' ? (
@@ -93,7 +93,7 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
             value={value}
             onChange={(e) => handleFieldChange(categoryKey, fieldKey, e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="input-erdbaron w-full resize-none"
             placeholder={`Enter ${fieldConfig.label.toLowerCase()}`}
           />
         ) : fieldConfig.type === 'date' ? (
@@ -102,7 +102,7 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
             type="date"
             value={value}
             onChange={(e) => handleFieldChange(categoryKey, fieldKey, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="input-erdbaron w-full"
           />
         ) : (
           <input
@@ -110,7 +110,7 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
             type="text"
             value={value}
             onChange={(e) => handleFieldChange(categoryKey, fieldKey, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="input-erdbaron w-full"
             placeholder={`Enter ${fieldConfig.label.toLowerCase()}`}
           />
         )}
@@ -120,11 +120,11 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
 
   const renderCategory = (categoryKey, categoryData) => {
     return (
-      <div key={categoryKey} className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+      <div key={categoryKey} className="card-erdbaron p-6 mb-6">
+        <h3 className="text-xl font-bold text-stone-800 mb-6 pb-3 border-b border-stone-200">
           {categoryKey.replace(/_/g, ' ')}
         </h3>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {Object.entries(categoryData.fields).map(([fieldKey, fieldConfig]) =>
             renderField(categoryKey, fieldKey, fieldConfig)
           )}
@@ -135,10 +135,10 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex items-center space-x-2">
-          <Loader className="w-5 h-5 animate-spin text-blue-600" />
-          <span className="text-gray-600">Loading cover page...</span>
+      <div className="flex items-center justify-center h-64 bg-stone-50">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin text-amber-600 mx-auto mb-3" />
+          <p className="text-stone-700 font-medium">Loading cover page...</p>
         </div>
       </div>
     );
@@ -146,11 +146,13 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-          <p className="text-red-600 font-medium">Error loading cover page</p>
-          <p className="text-gray-600 text-sm mt-1">{error}</p>
+      <div className="flex items-center justify-center h-64 bg-stone-50">
+        <div className="text-center max-w-md px-6">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-red-700 mb-2">Error loading cover page</h3>
+          <p className="text-red-600 text-sm">{error}</p>
         </div>
       </div>
     );
@@ -158,41 +160,52 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
 
   if (!coverPageStructure || !coverPageStructure.categories) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-          <p className="text-gray-600">No cover page structure available</p>
+      <div className="flex items-center justify-center h-64 bg-stone-50">
+        <div className="text-center max-w-md px-6">
+          <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-8 h-8 text-stone-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-stone-800 mb-2">No cover page available</h3>
+          <p className="text-stone-600 text-sm">Cover page structure is not available for this document.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="bg-white border-b px-4 py-3">
+    <div className="flex flex-col h-full bg-stone-50">
+      <div className="bg-white border-b border-stone-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Edit Cover Page</h2>
+          <div>
+            <h2 className="text-xl font-bold text-stone-800">Edit Cover Page</h2>
+            <p className="text-sm text-stone-600 mt-1">Configure the document cover page information</p>
+          </div>
           <button
             onClick={handleSave}
             disabled={!hasChanges || isSaving}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
               hasChanges && !isSaving
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'btn-erdbaron-primary'
+                : 'bg-stone-300 text-stone-500 cursor-not-allowed'
             }`}
           >
             {isSaving ? (
-              <Loader className="w-4 h-4 animate-spin" />
+              <>
+                <Loader className="w-4 h-4 animate-spin" />
+                <span>Saving...</span>
+              </>
             ) : (
-              <Save className="w-4 h-4" />
+              <>
+                <Save className="w-4 h-4" />
+                <span>Save Changes</span>
+              </>
             )}
-            <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl mx-auto">
+      <div className="flex-1 overflow-y-auto erdbaron-scrollbar">
+        <div className="max-w-4xl mx-auto p-6">
           {Object.entries(coverPageStructure.categories).map(([categoryKey, categoryData]) =>
             renderCategory(categoryKey, categoryData)
           )}

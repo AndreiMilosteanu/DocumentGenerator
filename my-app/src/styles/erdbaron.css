@@ -1,0 +1,178 @@
+/* Erdbaron Theme CSS */
+
+/* Custom scrollbar styling */
+.erdbaron-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #B8A082 #F4F1EA;
+}
+
+.erdbaron-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.erdbaron-scrollbar::-webkit-scrollbar-track {
+  background: #F4F1EA;
+  border-radius: 3px;
+}
+
+.erdbaron-scrollbar::-webkit-scrollbar-thumb {
+  background: #B8A082;
+  border-radius: 3px;
+}
+
+.erdbaron-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #8B7355;
+}
+
+/* Button styles */
+.btn-erdbaron-primary {
+  @apply bg-amber-700 hover:bg-amber-800 text-white border border-amber-700 hover:border-amber-800 
+         px-4 py-2 rounded-lg font-medium transition-all duration-200 
+         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2;
+}
+
+.btn-erdbaron-secondary {
+  @apply bg-orange-500 hover:bg-orange-600 text-white border border-orange-500 hover:border-orange-600 
+         px-4 py-2 rounded-lg font-medium transition-all duration-200 
+         focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2;
+}
+
+.btn-erdbaron-outline {
+  @apply bg-transparent hover:bg-stone-50 text-amber-700 border border-amber-700 hover:border-amber-800 
+         px-4 py-2 rounded-lg font-medium transition-all duration-200 
+         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2;
+}
+
+.btn-erdbaron-ghost {
+  @apply bg-transparent hover:bg-stone-50 text-stone-700 hover:text-amber-700 
+         px-4 py-2 rounded-lg font-medium transition-all duration-200 
+         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2;
+}
+
+/* Input styles */
+.input-erdbaron {
+  @apply bg-white border border-stone-300 hover:border-amber-600 focus:border-amber-600 
+         text-stone-900 placeholder-stone-500 px-3 py-2 rounded-lg 
+         focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 
+         transition-all duration-200;
+}
+
+/* Card styles */
+.card-erdbaron {
+  @apply bg-white border border-stone-200 shadow-sm rounded-xl overflow-hidden;
+}
+
+.card-erdbaron-hover {
+  @apply bg-white border border-stone-200 shadow-sm hover:shadow-lg rounded-xl overflow-hidden 
+         transition-all duration-300 cursor-pointer;
+}
+
+/* Typography */
+.text-erdbaron-primary {
+  @apply text-amber-700;
+}
+
+.text-erdbaron-secondary {
+  @apply text-orange-500;
+}
+
+.text-erdbaron-muted {
+  @apply text-stone-600;
+}
+
+.text-erdbaron-body {
+  @apply text-stone-800;
+}
+
+/* Background styles */
+.bg-erdbaron-primary {
+  @apply bg-amber-700;
+}
+
+.bg-erdbaron-secondary {
+  @apply bg-orange-500;
+}
+
+.bg-erdbaron-light {
+  @apply bg-stone-50;
+}
+
+.bg-erdbaron-surface {
+  @apply bg-white;
+}
+
+/* Status indicators */
+.status-approved {
+  @apply w-2 h-2 bg-green-500 rounded-full;
+}
+
+.status-pending {
+  @apply w-2 h-2 bg-yellow-500 rounded-full;
+}
+
+.status-error {
+  @apply w-2 h-2 bg-red-500 rounded-full;
+}
+
+/* Focus rings */
+.focus-erdbaron {
+  @apply focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2;
+}
+
+/* Animation classes */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Custom gradients */
+.gradient-erdbaron {
+  background: linear-gradient(135deg, #8B7355 0%, #6D5A43 100%);
+}
+
+.gradient-erdbaron-light {
+  background: linear-gradient(135deg, #F9F7F4 0%, #F4F1EA 100%);
+}
+
+/* Sidebar specific styles */
+.sidebar-item-active {
+  @apply bg-amber-50 text-amber-700 border-l-4 border-amber-600 font-medium;
+}
+
+.sidebar-item-inactive {
+  @apply text-stone-600 hover:text-amber-700 hover:bg-stone-50 transition-all duration-200;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+
+.modal-content {
+  @apply bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-auto;
+} 

@@ -68,18 +68,18 @@ export const ChatInput = ({
   // Get approve button style based on approval state
   const getEditButtonStyle = () => {
     if (isSubsectionApproved) {
-      return 'bg-green-500 text-white';
+      return 'bg-green-600 hover:bg-green-700 text-white border-green-600';
     }
-    return 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50';
+    return 'btn-erdbaron-primary';
   };
 
   return (
-    <div className="border-t px-4 py-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="border-t border-stone-200 bg-white px-6 py-4">
+      <div className="max-w-4xl mx-auto">
         <form 
           onSubmit={onSubmit} 
           onDragEnter={onDragEnter}
-          className={`relative flex items-start space-x-2 ${
+          className={`relative flex items-stretch gap-3 ${
             dragActive ? 'opacity-50' : ''
           }`}
         >
@@ -90,11 +90,13 @@ export const ChatInput = ({
             className="hidden"
             accept=".pdf,.docx"
           />
+          
+          {/* File attachment button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 disabled:opacity-50 mt-1"
-            title="PDF oder DOCX anhängen (max. 10 MB)"
+            className="flex-shrink-0 h-12 w-12 border-2 border-stone-300 hover:border-amber-600 text-stone-600 hover:text-amber-700 hover:bg-amber-50 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            title="Attach PDF or DOCX file (max. 10 MB)"
             disabled={!hasActiveConversation || isLoadingOrUploading}
           >
             {isUploading ? (
@@ -103,31 +105,36 @@ export const ChatInput = ({
               <Paperclip className="w-5 h-5" />
             )}
           </button>
-          <textarea
-            ref={(el) => {
-              // Handle both refs
-              textareaRef.current = el;
-              if (inputRef) {
-                inputRef.current = el;
-              }
-            }}
-            value={inputMessage}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Schreiben Sie Ihre Antwort..."
-            className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[44px] max-h-[150px] overflow-y-auto"
-            disabled={!hasActiveConversation || isLoadingOrUploading}
-            rows={1}
-          />
           
-          {/* Edit & Approve button - placed before the send button */}
+          {/* Text input area */}
+          <div className="flex-1 relative">
+            <textarea
+              ref={(el) => {
+                // Handle both refs
+                textareaRef.current = el;
+                if (inputRef) {
+                  inputRef.current = el;
+                }
+              }}
+              value={inputMessage}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message..."
+              className="w-full h-12 px-4 py-3 border-2 border-stone-300 hover:border-amber-600 focus:border-amber-600 rounded-xl text-stone-900 placeholder-stone-500 bg-white resize-none overflow-hidden transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 leading-tight"
+              disabled={!hasActiveConversation || isLoadingOrUploading}
+              rows={1}
+              style={{ minHeight: '48px', maxHeight: '150px' }}
+            />
+          </div>
+          
+          {/* Edit & Approve button */}
           {hasActiveConversation && (
             <button
               type="button" 
               onClick={onEditSectionData}
               disabled={isButtonDisabled}
-              className={`p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 flex items-center justify-center ${getEditButtonStyle()} disabled:cursor-not-allowed mt-1`}
-              title={isSubsectionApproved ? "Daten sind bereits gespeichert, aber können bearbeitet werden" : "Daten bearbeiten und in PDF übernehmen"}
+              className={`flex-shrink-0 h-12 w-12 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center ${getEditButtonStyle()}`}
+              title={isSubsectionApproved ? "Data saved - click to edit" : "Edit and save section data"}
             >
               {isApprovingData ? (
                 <Loader className="w-5 h-5 animate-spin" />
@@ -137,10 +144,11 @@ export const ChatInput = ({
             </button>
           )}
           
+          {/* Send button */}
           <button
             type="submit"
             disabled={isSendButtonDisabled}
-            className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+            className="flex-shrink-0 h-12 w-12 btn-erdbaron-primary disabled:opacity-50 disabled:cursor-not-allowed rounded-xl flex items-center justify-center"
           >
             {isLoadingOrUploading ? (
               <Loader className="w-5 h-5 animate-spin" />
@@ -151,33 +159,33 @@ export const ChatInput = ({
 
           {dragActive && (
             <div
-              className="absolute inset-0 bg-blue-50 border-2 border-blue-500 border-dashed rounded-lg flex items-center justify-center"
+              className="absolute inset-0 bg-amber-50 border-2 border-amber-500 border-dashed rounded-xl flex items-center justify-center z-10"
               onDragEnter={onDragEnter}
               onDragLeave={onDragLeave}
               onDragOver={onDragEnter}
               onDrop={onDrop}
             >
-              <div className="text-blue-500 flex items-center space-x-2">
-                <Upload className="w-5 h-5" />
-                <span>Datei hier ablegen</span>
+              <div className="text-amber-700 flex items-center space-x-3">
+                <Upload className="w-6 h-6" />
+                <span className="font-medium">Drop file here</span>
               </div>
             </div>
           )}
         </form>
 
-        <div className="mt-2 space-y-2">
+        <div className="mt-3 space-y-2">
           {selectedFile && (
-            <div className="text-sm text-gray-500 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Paperclip className="w-4 h-4" />
-                <span>{selectedFile.name}</span>
-                <span className="text-gray-400">
+            <div className="text-sm text-stone-600 flex items-center justify-between bg-stone-50 rounded-lg p-3">
+              <div className="flex items-center space-x-3">
+                <Paperclip className="w-4 h-4 text-amber-600" />
+                <span className="font-medium">{selectedFile.name}</span>
+                <span className="text-stone-500">
                   ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
                 </span>
               </div>
               <button
                 onClick={onFileRemove}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-stone-400 hover:text-red-600 transition-colors duration-200"
                 disabled={isLoadingOrUploading}
               >
                 <XCircle className="w-4 h-4" />
@@ -185,14 +193,14 @@ export const ChatInput = ({
             </div>
           )}
           {fileError && (
-            <div className="text-sm text-red-500 flex items-center space-x-2">
+            <div className="text-sm text-red-600 flex items-center space-x-2 bg-red-50 rounded-lg p-3">
               <XCircle className="w-4 h-4" />
               <span>{fileError}</span>
             </div>
           )}
           {!hasActiveConversation && (
-            <div className="text-sm text-gray-500 mt-2 text-center">
-              Bitte wählen Sie einen Abschnitt aus, um die Konversation zu beginnen
+            <div className="text-sm text-stone-500 text-center py-2">
+              Please select a section to begin the conversation
             </div>
           )}
         </div>

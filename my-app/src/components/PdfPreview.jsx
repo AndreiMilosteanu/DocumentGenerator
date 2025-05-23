@@ -111,9 +111,9 @@ export const PdfPreview = ({
       for (let element of textElements) {
         if (element.textContent.toLowerCase().includes(searchText)) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          // Highlight the section temporarily
+          // Highlight the section temporarily with Erdbaron colors
           const originalBackground = element.style.backgroundColor
-          element.style.backgroundColor = 'rgba(59, 130, 246, 0.2)' // Light blue highlight
+          element.style.backgroundColor = 'rgba(139, 115, 85, 0.2)' // Light brown highlight
           setTimeout(() => {
             element.style.backgroundColor = originalBackground
           }, 2000)
@@ -172,22 +172,22 @@ export const PdfPreview = ({
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
-      <div className="border-b bg-white flex justify-between items-center px-4 py-3">
-        <h2 className="text-lg font-semibold">Dokumentvorschau</h2>
+      <div className="border-b border-stone-200 bg-white flex justify-between items-center px-6 py-3 shadow-sm">
+        <h2 className="text-lg font-semibold text-stone-800">Document Preview</h2>
         <div className="flex items-center space-x-2">
           <button
             onClick={handleRefreshPdf}
             disabled={isRefreshing || isGeneratingPdf || !pdfUrl}
-            className="p-2 text-gray-600 hover:text-blue-600 focus:outline-none disabled:opacity-50"
-            title="PDF neu laden"
+            className="p-2.5 text-stone-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh PDF"
           >
             <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={handleCopyText}
             disabled={isCopyingText || isGeneratingPdf || !pdfUrl}
-            className="p-2 text-gray-600 hover:text-blue-600 focus:outline-none disabled:opacity-50"
-            title="Text kopieren"
+            className="p-2.5 text-stone-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Copy text"
           >
             {isCopyingText ? (
               <Loader className="w-5 h-5 animate-spin" />
@@ -198,8 +198,8 @@ export const PdfPreview = ({
           <button
             onClick={onDownloadPdf}
             disabled={isGeneratingPdf || !pdfUrl}
-            className="p-2 text-gray-600 hover:text-blue-600 focus:outline-none disabled:opacity-50"
-            title="Als PDF herunterladen"
+            className="btn-erdbaron-primary p-2.5"
+            title="Download PDF"
           >
             {isGeneratingPdf ? (
               <Loader className="w-5 h-5 animate-spin" />
@@ -210,32 +210,41 @@ export const PdfPreview = ({
         </div>
       </div>
 
-      <div className="flex-1 bg-white overflow-hidden">
+      <div className="flex-1 bg-stone-50 overflow-hidden">
         {pdfUrl ? (
           <>
             {isGeneratingPdf && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-10">
-                <Loader className="w-8 h-8 animate-spin text-blue-600" />
+              <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-10">
+                <div className="text-center">
+                  <Loader className="w-8 h-8 animate-spin text-amber-600 mx-auto mb-3" />
+                  <p className="text-stone-700 font-medium">Generating document...</p>
+                </div>
               </div>
             )}
             <iframe
               key={iframeKey} // Add key to force re-render when it changes
               ref={iframeRef}
               src={pdfUrl}
-              className="w-full h-full"
+              className="w-full h-full border-0"
               title="PDF Preview"
               onLoad={handleIframeLoad}
             />
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <FileText className="w-12 h-12 mb-2" />
-            <p>{isGeneratingPdf ? 'Dokument wird generiert...' : 'Kein Dokument verfügbar'}</p>
-            <p className="text-sm">
-              {isGeneratingPdf 
-                ? 'Bitte warten Sie einen Moment'
-                : 'Beantworten Sie die Fragen des Assistenten'}
-            </p>
+          <div className="flex flex-col items-center justify-center h-full text-stone-500 bg-white">
+            <div className="text-center max-w-md px-6">
+              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-8 h-8 text-stone-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-stone-800 mb-2">
+                {isGeneratingPdf ? 'Document is being generated...' : 'No document available'}
+              </h3>
+              <p className="text-sm text-stone-600">
+                {isGeneratingPdf 
+                  ? 'Please wait while we generate your document'
+                  : 'Answer the assistant\'s questions to generate a document'}
+              </p>
+            </div>
           </div>
         )}
       </div>

@@ -663,21 +663,30 @@ const ProjectView = () => {
 
   if (projectLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center h-screen bg-stone-50">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600"></div>
+          </div>
+          <h3 className="text-lg font-semibold text-stone-800 mb-2">Loading Project</h3>
+          <p className="text-stone-600">Please wait while we load your document...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-        <div className="bg-white shadow rounded-lg p-6 max-w-md mx-auto">
-          <h2 className="text-xl font-medium text-red-600 mb-4">Error</h2>
-          <p className="text-gray-700 mb-6">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 p-6">
+        <div className="card-erdbaron p-8 max-w-md mx-auto text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-8 h-8 text-red-500">⚠</div>
+          </div>
+          <h2 className="text-xl font-bold text-red-700 mb-4">Error</h2>
+          <p className="text-stone-700 mb-6">{error}</p>
           <button
             onClick={handleBackToDashboard}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="btn-erdbaron-primary"
           >
             Back to Dashboard
           </button>
@@ -687,7 +696,7 @@ const ProjectView = () => {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-stone-50">
       <Sidebar 
         selectedTopic={activeProject?.topic || ''}
         activeSection={activeSection}
@@ -702,18 +711,7 @@ const ProjectView = () => {
       />
       
       <div className="flex-1 flex overflow-hidden">
-        <div className="border-r w-2/5 flex flex-col">
-          <div className="bg-white border-b px-4 py-3">
-            <h1 className="text-lg font-semibold text-gray-900">
-              {activeProject?.name || 'Project View'}
-              {isDeckblattActive && <span className="text-sm font-normal text-gray-500 ml-2">→ Cover Page</span>}
-              {!isDeckblattActive && activeSection && <span className="text-sm font-normal text-gray-500 ml-2">→</span>}
-              {!isDeckblattActive && activeSection && <span className="text-sm ml-2">{activeSection}</span>}
-              {!isDeckblattActive && activeSubsection && <span className="text-sm font-normal text-gray-500 ml-2">→</span>}
-              {!isDeckblattActive && activeSubsection && <span className="text-sm ml-2">{activeSubsection}</span>}
-            </h1>
-          </div>
-          
+        <div className="border-r border-stone-200 w-2/5 flex flex-col bg-white">
           {/* Conditional rendering: Cover Page Editor or Chat Interface */}
           {isDeckblattActive ? (
             <CoverPageEditor 
@@ -731,6 +729,10 @@ const ProjectView = () => {
                 isLoading={isMessageLoading}
                 isStartingConversation={isStartingConversation}
                 messagesEndRef={messagesEndRef}
+                projectName={activeProject?.name || 'Document'}
+                sectionTitle={activeSection}
+                subsectionTitle={activeSubsection}
+                isDeckblattActive={isDeckblattActive}
               />
               <ChatInput
                 inputMessage={inputMessage}

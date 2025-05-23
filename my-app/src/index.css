@@ -1,6 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import './styles/erdbaron.css';
+
+/* Global styles */
+:root {
+  --erdbaron-primary: #8B7355;
+  --erdbaron-primary-hover: #6D5A43;
+  --erdbaron-secondary: #F39C12;
+  --erdbaron-secondary-hover: #E67E22;
+  --erdbaron-background: #F9F7F4;
+  --erdbaron-surface: #FFFFFF;
+  --erdbaron-text: #1C1917;
+  --erdbaron-text-muted: #78716C;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  background-color: var(--erdbaron-background);
+  color: var(--erdbaron-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom focus styles */
+*:focus {
+  outline: none;
+}
+
+/* Selection styles */
+::selection {
+  background-color: rgba(139, 115, 85, 0.2);
+  color: var(--erdbaron-text);
+}
+
+/* Scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4F1EA;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #B8A082;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8B7355;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Ensure proper text rendering */
+.antialiased {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 @layer utilities {
   .custom-scrollbar {

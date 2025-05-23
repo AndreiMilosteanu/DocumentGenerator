@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE_URL, documentStructure } from '../constants/documentStructure';
-import { Edit2, Trash2, MoreVertical, X, Check, Loader } from 'lucide-react';
+import { Edit2, Trash2, MoreVertical, X, Check, Loader, Plus, LogOut, FileText } from 'lucide-react';
 import { CreateProjectModal } from './CreateProjectModal';
 import { ApiTestButton } from './ApiTestButton';
 
@@ -336,170 +336,237 @@ export const Dashboard = () => {
       setIsMenuOpen(null);
     }
   };
+
+  // Get the icon for a document type
+  const getDocumentIcon = (topic) => {
+    return documentStructure[topic]?.icon || '📄';
+  };
   
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
-            {isAdmin && (
-              <p className="text-sm text-gray-500">
-                Admin Mode - All projects are visible
-              </p>
-            )}
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center px-3 py-1 bg-gray-100 rounded-md">
-              <span className="text-sm text-gray-600 mr-1">
-                {isAdmin ? 'Admin' : 'User'}:
-              </span>
-              <span className="text-sm font-medium">
-                {currentUser.email}
-              </span>
+    <div className="min-h-screen bg-stone-50">
+      {/* Header */}
+      <header className="bg-white border-b border-stone-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              {/* Erdbaron Logo */}
+              <div className="flex items-center space-x-3">
+                <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-sm border border-stone-200">
+                  <img 
+                    src="/erdbaron-logo.png" 
+                    alt="Erdbaron Logo" 
+                    className="w-14 h-14 object-contain"
+                  />
+                </div>
+                <div className="text-stone-800">
+                  <h1 className="text-lg font-bold">erdbaron®</h1>
+                  <p className="text-xs text-stone-600 -mt-1">Document Generator</p>
+                </div>
+              </div>
+              <div className="h-8 w-px bg-stone-300 mx-4"></div>
+              <div>
+                <h2 className="text-xl font-semibold text-stone-800">Dashboard</h2>
+                {isAdmin && (
+                  <p className="text-sm text-amber-600 font-medium">
+                    Admin Mode - All projects visible
+                  </p>
+                )}
+              </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Abmelden
-            </button>
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center px-4 py-2 bg-stone-100 rounded-xl border border-stone-200">
+                <span className="text-sm text-stone-600 mr-2">
+                  {isAdmin ? 'Admin' : 'User'}:
+                </span>
+                <span className="text-sm font-semibold text-stone-800">
+                  {currentUser.email}
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="btn-erdbaron-ghost flex items-center space-x-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Development tool for API testing */}
         {import.meta.env.DEV && <ApiTestButton />}
         
         {actionFeedback.message && (
-          <div 
-            className={`mb-4 px-4 py-2 rounded-md ${
-              actionFeedback.type === 'success' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
+          <div className={`mb-6 p-4 rounded-xl border ${
+            actionFeedback.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
             {actionFeedback.message}
           </div>
         )}
         
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-medium text-gray-900">
-            {isAdmin ? 'Alle Projekte' : 'Meine Projekte'}
-          </h2>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h3 className="text-2xl font-bold text-stone-800 mb-2">
+              {isAdmin ? 'All Projects' : 'My Projects'}
+            </h3>
+            <p className="text-stone-600">
+              {projects.length} {projects.length === 1 ? 'project' : 'projects'} total
+            </p>
+          </div>
           <button
             onClick={handleCreateProject}
-            className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-3 border-2 border-amber-500 hover:border-amber-400"
           >
-            Neues Projekt
+            <div className="w-6 h-6 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+              <Plus className="w-5 h-5" />
+            </div>
+            <span className="text-lg">New Project</span>
           </button>
         </div>
         
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6" role="alert">
-            <span className="block sm:inline">{error}</span>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl mb-6 flex items-center space-x-3" role="alert">
+            <div className="w-5 h-5 text-red-500">⚠</div>
+            <span>{error}</span>
           </div>
         )}
         
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="flex justify-center py-16">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+              </div>
+              <p className="text-stone-700 font-medium">Loading projects...</p>
+            </div>
           </div>
         ) : projects.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-500">Keine Projekte gefunden.</p>
-            <p className="text-sm text-gray-400 mt-2">Klicken Sie auf "Neues Projekt", um ein Projekt zu erstellen.</p>
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-stone-200">
+            <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-stone-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-stone-800 mb-2">No projects found</h3>
+            <p className="text-stone-600 mb-6">Get started by creating your first project.</p>
+            <button
+              onClick={handleCreateProject}
+              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 inline-flex items-center space-x-3 border-2 border-amber-500 hover:border-amber-400"
+            >
+              <div className="w-6 h-6 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                <Plus className="w-5 h-5" />
+              </div>
+              <span className="text-lg">Create Project</span>
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map(project => (
               <div 
                 key={project.id}
                 onClick={() => handleProjectSelect(project)}
-                className={`bg-white shadow rounded-lg p-6 cursor-pointer hover:shadow-md transition-shadow 
-                  ${editingProject === project.id ? 'ring-2 ring-blue-500' : ''}`}
+                className={`bg-white border-2 border-stone-200 rounded-2xl shadow-lg hover:shadow-xl hover:border-amber-300 p-6 cursor-pointer transition-all duration-300 transform hover:-translate-y-1 ${
+                  editingProject === project.id ? 'ring-4 ring-amber-400 shadow-2xl border-amber-400' : ''
+                }`}
               >
-                <div className="flex justify-between items-start">
-                  {editingProject === project.id ? (
-                    <div className="flex-1 flex items-center space-x-2" onClick={e => e.stopPropagation()}>
-                      <input
-                        ref={editInputRef}
-                        type="text"
-                        value={newProjectName}
-                        onChange={e => setNewProjectName(e.target.value)}
-                        className="flex-1 border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        autoFocus
-                      />
-                      <button
-                        onClick={e => updateProjectName(e, project.id)}
-                        className="p-1 text-green-600 hover:text-green-800"
-                        disabled={isUpdating}
-                        title="Speichern"
-                      >
-                        {isUpdating ? <Loader className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="p-1 text-red-600 hover:text-red-800"
-                        title="Abbrechen"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl flex items-center justify-center text-2xl border border-amber-200 shadow-sm">
+                      {getDocumentIcon(project.topic)}
                     </div>
-                  ) : (
-                    <>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">{project.name}</h3>
-                      <div className="relative flex items-center">
-                        {project.hasPdf && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mr-2">PDF</span>
-                        )}
-                        <button 
-                          onClick={e => handleMenuToggle(e, project.id)}
-                          className="text-gray-500 hover:text-gray-700"
-                        >
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
-                        
-                        {isMenuOpen === project.id && (
-                          <div 
-                            ref={menuRef}
-                            className="absolute top-full right-0 mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-10"
-                            onClick={e => e.stopPropagation()}
+                    <div className="flex-1">
+                      {editingProject === project.id ? (
+                        <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
+                          <input
+                            ref={editInputRef}
+                            type="text"
+                            value={newProjectName}
+                            onChange={e => setNewProjectName(e.target.value)}
+                            className="input-erdbaron flex-1 text-sm"
+                            autoFocus
+                          />
+                          <button
+                            onClick={e => updateProjectName(e, project.id)}
+                            className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                            disabled={isUpdating}
+                            title="Save"
                           >
-                            <button 
-                              onClick={e => startEditProject(e, project)}
-                              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              <Edit2 className="w-4 h-4 mr-2" />
-                              Name bearbeiten
-                            </button>
-                            <button 
-                              onClick={e => deleteProject(e, project.id)}
-                              className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                              disabled={isDeleting}
-                            >
-                              {isDeleting ? (
-                                <Loader className="w-4 h-4 mr-2 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4 mr-2" />
-                              )}
-                              Projekt löschen
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </>
+                            {isUpdating ? <Loader className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <h4 className="font-bold text-stone-800 text-lg mb-1 line-clamp-2 leading-tight">{project.name}</h4>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {editingProject !== project.id && (
+                    <div className="relative flex items-center space-x-2">
+                      {project.hasPdf && (
+                        <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold border border-green-200">PDF</span>
+                      )}
+                      <button 
+                        onClick={e => handleMenuToggle(e, project.id)}
+                        className="text-stone-500 hover:text-stone-700 hover:bg-stone-100 p-2 rounded-lg transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      
+                      {isMenuOpen === project.id && (
+                        <div 
+                          ref={menuRef}
+                          className="absolute top-full right-0 mt-2 w-48 bg-white shadow-2xl rounded-xl py-2 z-10 border-2 border-stone-200"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <button 
+                            onClick={e => startEditProject(e, project)}
+                            className="flex w-full items-center px-4 py-3 text-sm text-stone-700 hover:bg-amber-50 transition-colors"
+                          >
+                            <Edit2 className="w-4 h-4 mr-3 text-amber-600" />
+                            Edit name
+                          </button>
+                          <div className="h-px bg-stone-200 mx-2"></div>
+                          <button 
+                            onClick={e => deleteProject(e, project.id)}
+                            className="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? (
+                              <Loader className="w-4 h-4 mr-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4 mr-3" />
+                            )}
+                            Delete project
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">{project.topic}</p>
-                <div className="mt-4 flex justify-between items-center text-xs text-gray-500">
-                  <span>ID: {project.id.substring(0, 8)}...</span>
-                  <span>{new Date(project.createdAt).toLocaleDateString()}</span>
+                
+                <div className="mb-4 p-3 bg-stone-50 rounded-xl border border-stone-200">
+                  <p className="text-sm font-semibold text-amber-700 mb-2">{project.topic}</p>
+                  <div className="flex justify-between items-center text-xs text-stone-500">
+                    <span className="font-mono bg-stone-200 px-2 py-1 rounded">ID: {project.id.substring(0, 8)}...</span>
+                    <span>{new Date(project.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
+                
                 {isAdmin && currentUser.id !== project.createdBy && (
-                  <div className="mt-2 text-xs text-blue-500">
-                    Created by another user
+                  <div className="mt-4 pt-3 border-t-2 border-blue-100">
+                    <div className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-lg inline-block">
+                      Created by another user
+                    </div>
                   </div>
                 )}
               </div>
