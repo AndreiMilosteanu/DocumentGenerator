@@ -85,7 +85,6 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
             value={value}
             onChange={(e) => handleFieldChange(categoryKey, fieldKey, e.target.value)}
             className="input-erdbaron w-full"
-            placeholder={`Enter ${fieldConfig.label.toLowerCase()}`}
           />
         ) : fieldConfig.type === 'textarea' ? (
           <textarea
@@ -94,7 +93,6 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
             onChange={(e) => handleFieldChange(categoryKey, fieldKey, e.target.value)}
             rows={3}
             className="input-erdbaron w-full resize-none"
-            placeholder={`Enter ${fieldConfig.label.toLowerCase()}`}
           />
         ) : fieldConfig.type === 'date' ? (
           <input
@@ -111,7 +109,6 @@ export const CoverPageEditor = ({ documentId, onSave }) => {
             value={value}
             onChange={(e) => handleFieldChange(categoryKey, fieldKey, e.target.value)}
             className="input-erdbaron w-full"
-            placeholder={`Enter ${fieldConfig.label.toLowerCase()}`}
           />
         )}
       </div>

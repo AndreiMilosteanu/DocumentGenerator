@@ -178,27 +178,44 @@ export const FileList = ({ documentId }) => {
     );
   };
 
+  // Get attachment label based on attachment flag
+  const getAttachmentLabel = (attachment) => {
+    if (attachment === true) {
+      return (
+        <span className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 font-medium">
+          Anlage
+        </span>
+      );
+    } else {
+      return (
+        <span className="text-xs px-2 py-1 rounded-full bg-stone-100 text-stone-600">
+          Conversation Only
+        </span>
+      );
+    }
+  };
+
   // Ensure files is always an array
   const fileList = Array.isArray(files) ? files : [];
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-1.5">
-        <h3 className="font-medium text-xs text-gray-700">Dateien</h3>
+        <h3 className="font-medium text-xs text-stone-700">Dateien</h3>
         <button 
           onClick={handleRefreshFiles}
           disabled={isRefreshing || isUploading}
-          className="text-gray-500 hover:text-blue-600 p-0.5 rounded-full disabled:opacity-50"
+          className="text-stone-500 hover:text-amber-600 p-0.5 rounded-full disabled:opacity-50 transition-colors duration-200"
           title="Dateien aktualisieren"
         >
-          <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
+          <RefreshCw className={`w-3.5 h-3.5 flex-shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
       </div>
       
       {/* File Upload Area */}
       <div
-        className={`border-2 border-dashed ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'} 
-          rounded-md p-2 text-center cursor-pointer mb-1.5 ${isUploading ? 'opacity-50' : ''}`}
+        className={`border-2 border-dashed ${dragActive ? 'border-amber-500 bg-amber-50' : 'border-stone-300'} 
+          rounded-lg p-2 text-center cursor-pointer mb-1.5 transition-all duration-200 ${isUploading ? 'opacity-50' : 'hover:border-amber-400 hover:bg-amber-50'}`}
         onClick={() => !isUploading && fileInputRef.current?.click()}
         onDragEnter={(e) => handleDrag(e, true)}
         onDragOver={(e) => handleDrag(e, true)}
@@ -216,13 +233,13 @@ export const FileList = ({ documentId }) => {
         
         {isUploading ? (
           <div className="flex items-center justify-center py-1">
-            <Loader className="w-3.5 h-3.5 mr-1.5 animate-spin text-blue-500" />
-            <span className="text-xs text-gray-500">Hochladen...</span>
+            <Loader className="w-3.5 h-3.5 mr-1.5 animate-spin text-amber-600" />
+            <span className="text-xs text-stone-600">Hochladen...</span>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-1">
-            <Upload className="w-4 h-4 mb-0.5 text-gray-500" />
-            <span className="text-xs text-gray-500">
+            <Upload className="w-4 h-4 mb-0.5 text-stone-500" />
+            <span className="text-xs text-stone-600">
               Datei hochladen (.pdf, .docx)
             </span>
           </div>
@@ -231,16 +248,16 @@ export const FileList = ({ documentId }) => {
       
       {/* Error messages */}
       {(fileError || uploadError) && (
-        <div className="mb-1.5 text-xs text-red-500 flex items-center">
+        <div className="mb-1.5 text-xs text-red-600 flex items-center bg-red-50 p-2 rounded-lg border border-red-200">
           <XCircle className="w-3 h-3 mr-1 flex-shrink-0" />
           <span className="text-xs">{fileError || uploadError}</span>
         </div>
       )}
       
       {/* File List */}
-      <div className="overflow-y-auto custom-scrollbar pr-1 space-y-1.5" style={{ maxHeight: '180px' }}>
+      <div className="overflow-y-auto erdbaron-scrollbar pr-1 space-y-1.5" style={{ maxHeight: '180px' }}>
         {fileList.length === 0 ? (
-          <div className="text-center text-gray-500 py-3 text-xs">
+          <div className="text-center text-stone-500 py-3 text-xs">
             <Paperclip className="w-4 h-4 mx-auto mb-1" />
             <p>Keine Dateien vorhanden</p>
           </div>
@@ -248,33 +265,34 @@ export const FileList = ({ documentId }) => {
           fileList.map((file) => (
             <div 
               key={file.id} 
-              className="flex flex-col p-1.5 border border-gray-200 rounded-md hover:bg-gray-50"
+              className="flex flex-col p-1.5 border border-stone-200 rounded-lg hover:bg-stone-50 transition-colors duration-200"
             >
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center overflow-hidden">
-                  <File className="w-3.5 h-3.5 text-gray-500 flex-shrink-0 mr-1.5" />
-                  <span className="text-xs text-gray-700 truncate" title={file.original_filename}>
+                  <File className="w-3.5 h-3.5 text-stone-500 flex-shrink-0 mr-1.5" />
+                  <span className="text-xs text-stone-700 truncate" title={file.original_filename}>
                     {file.original_filename}
                   </span>
                 </div>
                 <button
                   onClick={() => handleDeleteFile(file.id)}
-                  className="text-gray-400 hover:text-red-500 p-0.5 ml-1"
+                  className="text-stone-400 hover:text-red-500 p-0.5 ml-1 transition-colors duration-200"
                   title="Datei löschen"
                 >
                   <Trash2 className="w-3 h-3 flex-shrink-0" />
                 </button>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-1.5">
+                <div className="flex items-center flex-wrap gap-1.5">
                   {getStatusBadge(file.status)}
+                  {getAttachmentLabel(file.attachment)}
                   {file.error_message && (
                     <span className="text-xs text-red-600" title={file.error_message}>
                       <XCircle className="w-3 h-3" />
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-stone-500 flex-shrink-0 ml-2">
                   {(file.file_size / (1024 * 1024)).toFixed(2)} MB
                 </span>
               </div>

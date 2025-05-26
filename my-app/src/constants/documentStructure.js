@@ -19,16 +19,6 @@ export const documentStructure = {
     icon: '📄',
     sections: [
       {
-        key: 'Deckblatt',
-        title: 'Deckblatt',
-        subsections: [
-          { key: 'Projekt', title: 'Projekt' },
-          { key: 'Auftraggeber', title: 'Auftraggeber' },
-          { key: 'Dienstleistungsnummer', title: 'Dienstleistungsnummer' },
-          { key: 'Probenahmedatum', title: 'Probenahmedatum' }
-        ]
-      },
-      {
         key: 'Stellungnahme',
         title: 'Stellungnahme',
         subsections: [
