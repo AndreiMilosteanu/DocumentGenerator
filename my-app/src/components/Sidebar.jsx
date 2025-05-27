@@ -13,7 +13,8 @@ export const Sidebar = ({
   documentId,
   onBackToDashboard,
   onDeckblattClick,
-  isDeckblattActive
+  isDeckblattActive,
+  onPdfRefresh
 }) => {
   const [expandedSections, setExpandedSections] = useState({});
   const [lastClickedSubsection, setLastClickedSubsection] = useState(null);
@@ -160,7 +161,7 @@ export const Sidebar = ({
           {/* File List Component with fixed height */}
           {documentId && (
             <div className="mt-2 flex-shrink-0 max-h-60">
-              <FileList documentId={documentId} />
+              <FileList documentId={documentId} onPdfRefresh={onPdfRefresh} />
             </div>
           )}
         </div>

@@ -72,7 +72,13 @@ export const useFileUpload = () => {
         console.log('Calling callback to refresh PDF after file upload');
         try {
           const result = onFileUploaded(documentId);
-          console.log('PDF refresh callback called result:', result);
+          // If the callback returns a promise, await it
+          if (result && typeof result.then === 'function') {
+            await result;
+            console.log('PDF refresh callback completed successfully');
+          } else {
+            console.log('PDF refresh callback called result:', result);
+          }
         } catch (callbackError) {
           console.error('Error calling PDF refresh callback after file upload:', callbackError);
         }
@@ -147,7 +153,13 @@ export const useFileUpload = () => {
         console.log('Calling callback to refresh PDF after file upload with message');
         try {
           const result = onFileUploaded(documentId);
-          console.log('PDF refresh callback called result:', result);
+          // If the callback returns a promise, await it
+          if (result && typeof result.then === 'function') {
+            await result;
+            console.log('PDF refresh callback completed successfully');
+          } else {
+            console.log('PDF refresh callback called result:', result);
+          }
         } catch (callbackError) {
           console.error('Error calling PDF refresh callback after file upload with message:', callbackError);
         }
@@ -288,7 +300,13 @@ export const useFileUpload = () => {
         console.log('Calling callback to refresh PDF after file deletion');
         try {
           const result = onFileDeleted(documentId);
-          console.log('PDF refresh callback called result:', result);
+          // If the callback returns a promise, await it
+          if (result && typeof result.then === 'function') {
+            await result;
+            console.log('PDF refresh callback completed successfully');
+          } else {
+            console.log('PDF refresh callback called result:', result);
+          }
         } catch (callbackError) {
           console.error('Error calling PDF refresh callback after file deletion:', callbackError);
         }

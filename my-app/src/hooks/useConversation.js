@@ -55,8 +55,9 @@ export const useConversation = () => {
       }
       
       const blob = await response.blob()
-      // Add timestamp to ensure the URL is always unique
-      const pdfUrl = URL.createObjectURL(blob) + '#t=' + timestamp;
+      // Create a completely new blob URL with timestamp to ensure uniqueness
+      const basePdfUrl = URL.createObjectURL(blob);
+      const pdfUrl = `${basePdfUrl}#t=${timestamp}&refresh=${Math.random().toString(36).substr(2, 9)}`;
       console.log('PDF fetched successfully, created URL:', pdfUrl);
       
       // Update the state with the new URL - use function form to ensure we have the latest state
@@ -67,7 +68,8 @@ export const useConversation = () => {
         };
         console.log('Updated PDF URLs:', {
           previous: prev[documentId],
-          new: pdfUrl
+          new: pdfUrl,
+          documentId
         });
         return newUrls;
       });

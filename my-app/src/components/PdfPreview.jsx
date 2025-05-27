@@ -18,36 +18,45 @@ export const PdfPreview = ({
   
   // Effect to reload iframe when pdfUrl changes
   useEffect(() => {
-    if (pdfUrl && pdfUrl !== currentPdfUrl) {
+    console.log('PdfPreview useEffect triggered:', {
+      pdfUrl,
+      currentPdfUrl,
+      hasNewUrl: !!pdfUrl,
+      urlsAreDifferent: pdfUrl !== currentPdfUrl,
+      iframeKey
+    });
+    
+    if (pdfUrl) {
       console.log('PDF URL changed, refreshing iframe:', {
         old: currentPdfUrl,
-        new: pdfUrl
+        new: pdfUrl,
+        urlsAreDifferent: pdfUrl !== currentPdfUrl
       })
       
-      setIsRefreshing(true)
-      
-      // Update the key to force a complete iframe reload
-      setIframeKey(Date.now())
-      
-      // Update the current URL
-      setCurrentPdfUrl(pdfUrl)
-      
-      // Directly manipulate the iframe if it exists
-      if (iframeRef.current) {
-        // This will force the iframe to reload
-        try {
-          iframeRef.current.src = pdfUrl
-        } catch (error) {
-          console.error('Error directly setting iframe src:', error)
-        }
+      // Always refresh if we have a new URL, even if it looks similar
+      if (pdfUrl !== currentPdfUrl) {
+        console.log('URLs are different, triggering iframe refresh');
+        setIsRefreshing(true)
+        
+        // Update the key to force a complete iframe reload
+        const newKey = Date.now();
+        setIframeKey(newKey)
+        
+        // Update the current URL
+        setCurrentPdfUrl(pdfUrl)
+        
+        console.log('Forcing iframe reload with new key:', newKey, 'for URL:', pdfUrl)
+        
+        // Reset refreshing state after a delay
+        setTimeout(() => {
+          console.log('Iframe refresh completed for key:', newKey);
+          setIsRefreshing(false)
+        }, 1500) // Increased delay to ensure iframe has time to load
+      } else {
+        console.log('URLs are the same, no refresh needed');
       }
-      
-      // Reset refreshing state after a delay
-      setTimeout(() => {
-        setIsRefreshing(false)
-      }, 1000)
     }
-  }, [pdfUrl])
+  }, [pdfUrl, currentPdfUrl])
 
   // Function to manually refresh the PDF
   const handleRefreshPdf = () => {

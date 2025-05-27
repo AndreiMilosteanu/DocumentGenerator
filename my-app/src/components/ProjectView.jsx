@@ -667,6 +667,26 @@ const ProjectView = () => {
     }
   }, [projectId, resetFileCache]);
 
+  // Debug: Track when pdfUrls change
+  useEffect(() => {
+    if (activeProject?.documentId) {
+      const currentPdfUrl = pdfUrls[activeProject.documentId];
+      console.log('ProjectView: pdfUrls changed for document:', {
+        documentId: activeProject.documentId,
+        currentPdfUrl,
+        allPdfUrls: pdfUrls
+      });
+    }
+  }, [pdfUrls, activeProject?.documentId]);
+
+  // Debug: Log on every render to see if component is re-rendering
+  console.log('ProjectView: Component rendering with pdfUrls:', {
+    activeProjectId: activeProject?.documentId,
+    pdfUrls,
+    currentPdfUrl: activeProject?.documentId ? pdfUrls[activeProject.documentId] : null,
+    timestamp: new Date().toISOString()
+  });
+
   if (projectLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-stone-50">
@@ -714,6 +734,7 @@ const ProjectView = () => {
         onBackToDashboard={handleBackToDashboard}
         onDeckblattClick={handleDeckblattClick}
         isDeckblattActive={isDeckblattActive}
+        onPdfRefresh={fetchPdfPreview}
       />
       
       <div className="flex-1 flex overflow-hidden">
@@ -769,7 +790,19 @@ const ProjectView = () => {
           )}
         </div>
         
+        {/* Debug: Log PDF URL before passing to PdfPreview */}
+        {(() => {
+          const currentPdfUrl = activeProject?.documentId ? pdfUrls[activeProject.documentId] : null;
+          console.log('ProjectView: Rendering PdfPreview with URL:', {
+            documentId: activeProject?.documentId,
+            pdfUrl: currentPdfUrl,
+            timestamp: new Date().toISOString()
+          });
+          return null;
+        })()}
+        
         <PdfPreview
+          key={activeProject?.documentId ? `pdf-${activeProject.documentId}-${pdfUrls[activeProject.documentId] || 'no-url'}` : 'no-project'}
           pdfUrl={activeProject?.documentId ? pdfUrls[activeProject.documentId] : null}
           onDownloadPdf={handleDownloadPDF}
           isGeneratingPdf={isGeneratingPdf}

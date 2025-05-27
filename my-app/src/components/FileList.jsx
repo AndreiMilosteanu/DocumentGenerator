@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { File, Upload, Trash2, Loader, XCircle, Paperclip, RefreshCw } from 'lucide-react';
 import { useFileUpload } from '../hooks/useFileUpload';
-import { useConversation } from '../hooks/useConversation';
 
-export const FileList = ({ documentId }) => {
+export const FileList = ({ documentId, onPdfRefresh }) => {
   const [dragActive, setDragActive] = useState(false);
   const [fileError, setFileError] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -17,9 +16,6 @@ export const FileList = ({ documentId }) => {
     listDocumentFiles,
     deleteFile
   } = useFileUpload();
-  
-  // Get fetchPdfPreview from useConversation
-  const { fetchPdfPreview } = useConversation();
 
   const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
   const ALLOWED_FILE_TYPES = [
@@ -89,7 +85,7 @@ export const FileList = ({ documentId }) => {
       // Define a callback for refreshing the PDF after upload
       const refreshPdfCallback = (docId) => {
         console.log('FileList: Refreshing PDF after file upload', { docId });
-        return fetchPdfPreview(docId);
+        return onPdfRefresh(docId);
       };
       
       await uploadFileToDocument(documentId, file, null, null, refreshPdfCallback);
@@ -127,7 +123,7 @@ export const FileList = ({ documentId }) => {
       // Define a callback for refreshing the PDF after upload
       const refreshPdfCallback = (docId) => {
         console.log('FileList: Refreshing PDF after file drop upload', { docId });
-        return fetchPdfPreview(docId);
+        return onPdfRefresh(docId);
       };
       
       await uploadFileToDocument(documentId, file, null, null, refreshPdfCallback);
@@ -150,7 +146,7 @@ export const FileList = ({ documentId }) => {
       // Define a callback for refreshing the PDF after deletion
       const refreshPdfCallback = (docId) => {
         console.log('FileList: Refreshing PDF after file deletion', { docId });
-        return fetchPdfPreview(docId);
+        return onPdfRefresh(docId);
       };
       
       await deleteFile(documentId, fileId, refreshPdfCallback);
