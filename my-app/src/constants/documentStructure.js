@@ -26,13 +26,6 @@ export const documentStructure = {
           { key: 'Laborberichte', title: 'Laborberichte' },
           { key: 'Auswertung', title: 'Auswertung' }
         ]
-      },
-      {
-        key: 'Anhänge',
-        title: 'Anhänge',
-        subsections: [
-          { key: 'Dateien', title: 'Dateien' }
-        ]
       }
     ]
   },
@@ -54,14 +47,6 @@ export const documentStructure = {
         subsections: [
           { key: 'Bodenbeschaffenheit', title: 'Bodenbeschaffenheit' },
           { key: 'Analyseergebnisse', title: 'Analyseergebnisse' }
-        ]
-      },
-      {
-        key: 'Anhänge',
-        title: 'Anhänge',
-        subsections: [
-          { key: 'Laborberichte', title: 'Laborberichte' },
-          { key: 'Fotos', title: 'Fotos' }
         ]
       }
     ]
@@ -133,14 +118,6 @@ export const documentStructure = {
         subsections: [
           { key: 'Schlussbemerkung', title: 'Schlussbemerkung' }
         ]
-      },
-      {
-        key: 'Anhänge',
-        title: 'Anhänge',
-        subsections: [
-          { key: 'Gutachten', title: 'Gutachten' },
-          { key: 'Pläne', title: 'Pläne' }
-        ]
       }
     ]
   },
@@ -162,14 +139,6 @@ export const documentStructure = {
         subsections: [
           { key: 'Messergebnisse', title: 'Messergebnisse' },
           { key: 'Auswertung', title: 'Auswertung' }
-        ]
-      },
-      {
-        key: 'Anhänge',
-        title: 'Anhänge',
-        subsections: [
-          { key: 'Messprotokolle', title: 'Messprotokolle' },
-          { key: 'Diagramme', title: 'Diagramme' }
         ]
       }
     ]

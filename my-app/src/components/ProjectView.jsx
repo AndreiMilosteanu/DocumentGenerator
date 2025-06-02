@@ -504,18 +504,11 @@ const ProjectView = () => {
           }));
         }
         
-        // Define a callback for refreshing the PDF after upload
-        const refreshPdfCallback = (docId) => {
-          console.log('ProjectView: Refreshing PDF after file upload with message', { docId });
-          return fetchPdfPreview(docId);
-        };
-        
-        // Use uploadFileWithMessage with PDF refresh callback
+        // Upload file without PDF refresh callback since this is a chat message
         const response = await uploadFileWithMessage(
           activeProject.documentId,
           selectedFile,
-          messageToSend,
-          refreshPdfCallback // Pass PDF refresh callback
+          messageToSend
         );
         
         console.log('File upload with message response:', response);
