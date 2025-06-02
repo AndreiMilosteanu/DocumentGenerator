@@ -520,22 +520,10 @@ const ProjectView = () => {
         
         console.log('File upload with message response:', response);
         
-        // Add assistant response to conversation
+        // Refresh conversation history to get the actual assistant response
         if (response) {
-          // The response structure might be { message } or it might have the message in another property
-          const assistantMessage = response.message || response.assistant_message || response.content || 
-                                 (typeof response === 'string' ? response : 'Datei erfolgreich hochgeladen');
-          
-          console.log('Adding assistant response to conversation:', assistantMessage);
-          
-          setMessages(prev => ({
-            ...prev,
-            [messageKey]: [...(prev[messageKey] || []), {
-              role: 'assistant',
-              content: assistantMessage,
-              timestamp: new Date().toISOString()
-            }]
-          }));
+          console.log('File upload successful, refreshing conversation history');
+          await fetchSubsectionMessages(activeProject.documentId, activeSectionKey, activeSubsectionKey);
         }
         
         // Clear file after successful upload
